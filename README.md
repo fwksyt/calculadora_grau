@@ -1,6 +1,6 @@
 # Calculadora de Grau — Ragnarök Online
 
-Calculadora completa para o **Sistema de Grau** e **Refinamento** de Ragnarök Online (bRO), em um único arquivo HTML — sem dependências, sem instalação, sem servidor.
+Calculadora completa para o **Sistema de Grau** e **Refinamento** de Ragnarök Online (LATAM), em um único arquivo HTML — sem dependências, sem instalação, sem servidor.
 
 ## Como usar
 
@@ -42,10 +42,10 @@ Todos os campos de preço são **opcionais**: sem eles a calculadora mostra apen
 
 ## Fontes dos dados
 
-- Chances e mecânicas: [bROWiki — Grau](https://browiki.org/wiki/Grau) e [bROWiki — Refinamento](https://browiki.org/wiki/Refinamento)
+- Chances e mecânicas: [LATAMWiki — Grau](https://LATAMwiki.org/wiki/Grau) e [LATAMWiki — Refinamento](https://LATAMwiki.org/wiki/Refinamento)
 - Ícones e banco de itens: [Divine Pride](https://www.divine-pride.net/)
 
-> **Nota:** as chances e taxas podem mudar com atualizações do servidor. Confira sempre a bROWiki em caso de dúvida.
+> **Nota:** as chances e taxas podem mudar com atualizações do servidor. Confira sempre a LATAMWiki em caso de dúvida.
 
 ## Tecnologias
 
