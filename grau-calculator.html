@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Calculadora de Grau — Ragnarök Online</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* Identidade FAW: creme = base, roxo do banner = painéis, rosa/ardósia = destaques */
+      --bg:      #f8dfb0;  /* creme — página */
+      --bg2:     #382a4e;  /* roxo do banner — painéis/cards */
+      --bg3:     #2a2039;  /* roxo profundo — insets/inputs/chips */
+      --border:  #4a3b62;  /* borda roxa (interna) */
+      --text:    #f2e7d0;  /* creme — texto sobre roxo */
+      --muted:   #bbb0cb;  /* lavanda clara — texto secundário sobre roxo */
+      --accent:  #ee3a5c;  /* rosa — destaque */
+      --accent2: #ff5b76;  /* rosa claro — valores */
+      --green:   #5cc47e;  /* sucesso */
+      --red:     #f2596b;  /* perigo */
+      --slate:   #8fa1bd;  /* azul-ardósia — secundário */
+      --ink:     #3a2b4f;  /* roxo escuro — texto sobre creme */
+      --ink-soft:#6a5a7e;  /* roxo suave — texto secundário sobre creme */
+    }
+
+    body {
+      zoom: 1.25;
+      background-color: var(--bg);
+      background-image: radial-gradient(rgba(238,58,92,.20) 2px, transparent 2.2px);
+      background-size: 24px 24px;
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* layout */
+    .page { display: flex; min-height: 100vh; }
+
+    /* sidebar */
+    .sidebar {
+      width: 190px; min-width: 190px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      position: sticky; top: 0; height: 100vh;
+      transition: width .2s;
+    }
+    .sidebar.collapsed { width: 34px; min-width: 34px; overflow: hidden; }
+    .sidebar-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 11px; cursor: pointer; user-select: none;
+      border-bottom: 1px solid var(--border);
+      font-size: .75em; color: var(--muted); white-space: nowrap;
+    }
+    .sidebar-toggle:hover { color: var(--text); }
+    .sidebar.collapsed .sidebar-toggle { justify-content: center; }
+    .sidebar.collapsed .toggle-label { display: none; }
+    .sidebar-inner { padding: 6px 0; }
+    .sidebar.collapsed .sidebar-inner { display: none; }
+    details.igrp { border-bottom: 1px solid var(--border); }
+    details.igrp summary {
+      padding: 7px 11px; font-size: .7em; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted); cursor: pointer;
+      list-style: none; display: flex; justify-content: space-between;
+    }
+    details.igrp summary::-webkit-details-marker { display: none; }
+    details.igrp summary::after { content: '+'; }
+    details.igrp[open] summary::after { content: '−'; }
+    details.igrp summary:hover { color: var(--text); }
+    .llist { padding: 2px 0 6px; margin: 0; }
+    .llist li { list-style: none; }
+    .llist a {
+      display: block; padding: 3px 14px; font-size: .8em;
+      color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .llist a:hover { color: var(--accent2); background: var(--bg3); text-decoration: none; }
+
+    /* main */
+    .main { flex: 1; padding: 18px 22px; min-width: 0; }
+
+    .page-title {
+      font-size: 2.15em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+      color: #e7ebf1;
+      -webkit-text-stroke: 2px var(--accent);
+      paint-order: stroke fill;
+      text-shadow: 3px 3px 0 rgba(43,32,57,.30);
+      margin-bottom: 7px;
+    }
+    .page-sub   { font-size: .8em; color: var(--ink-soft); margin-bottom: 16px; }
+
+    .grade-strip { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+    .gbadge {
+      padding: 3px 9px; border-radius: 3px; font-size: .78em;
+      border: 1px solid var(--border); background: var(--bg2); color: var(--muted);
+    }
+    .gbadge strong { color: var(--accent2); }
+
+    .section-label {
+      font-size: .74em; text-transform: uppercase; letter-spacing: 1px; font-weight: 800;
+      color: var(--ink); margin-bottom: 8px; margin-top: 0;
+    }
+    .section-label::before {
+      content: ''; display: inline-block; width: 16px; height: 3px;
+      background: var(--accent); margin-right: 8px; vertical-align: middle;
+    }
+
+    .card {
+      background: var(--bg2); border: 1px solid #241a30;
+      border-radius: 8px; padding: 14px; margin-bottom: 10px;
+      box-shadow: 0 3px 10px rgba(43,32,57,.20);
+    }
+
+    /* 3-column top layout */
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+    @media(max-width:900px){ .top-grid{ grid-template-columns: 1fr 1fr; } }
+    @media(max-width:560px){ .top-grid{ grid-template-columns: 1fr; } }
+
+    .col-label {
+      font-size: .7em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
+      color: var(--ink); margin-bottom: 7px;
+    }
+    .col-label::before {
+      content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 1px;
+      background: var(--accent); margin-right: 6px; vertical-align: middle;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media(max-width:540px){ .form-grid{ grid-template-columns: 1fr; } }
+
+    /* item price cards */
+    .ipc {
+      display: flex; align-items: center; gap: 8px;
+      background: #43345c; border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 10px; margin-bottom: 6px;
+      transition: border-color .12s;
+    }
+    .ipc:hover { border-color: var(--accent); }
+    .ipc-icon {
+      width: 32px; height: 32px; object-fit: contain;
+      image-rendering: pixelated; flex-shrink: 0; border-radius: 3px;
+    }
+    .ipc-name {
+      flex: 1; font-size: .85em; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+    }
+    .ipc-input { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .ipc-input input {
+      width: 100px; padding: 5px 8px; text-align: right;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text); font-size: .85em;
+      font-variant-numeric: tabular-nums;
+    }
+    .ipc-input input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(238,58,92,.25); }
+    .price-unit { font-size: .72em; color: var(--muted); flex-shrink: 0; }
+
+    /* collapsible details */
+    details.collapsible { margin-bottom: 10px; }
+    details.collapsible > summary {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; list-style: none; padding: 11px 14px;
+      background: var(--bg2); border: 1px solid #241a30; border-radius: 8px;
+      font-size: .7em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text);
+      user-select: none; box-shadow: 0 3px 10px rgba(43,32,57,.20);
+    }
+    details.collapsible > summary::-webkit-details-marker { display: none; }
+    details.collapsible > summary::after { content: '▸ Expandir'; font-size: .9em; }
+    details.collapsible[open] > summary { border-radius: 8px 8px 0 0; border-bottom: none; box-shadow: none; }
+    details.collapsible[open] > summary::after { content: '▾ Recolher'; }
+    details.collapsible > summary:hover { color: var(--text); }
+    details.collapsible > .det-body {
+      background: var(--bg2); border: 1px solid #241a30;
+      border-top: none; border-radius: 0 0 8px 8px; padding: 14px;
+      box-shadow: 0 3px 10px rgba(43,32,57,.20);
+    }
+
+    .fg label {
+      display: block; font-size: .7em; text-transform: uppercase; letter-spacing: .8px;
+      color: var(--muted); margin-bottom: 4px;
+    }
+    select, input[type=number] {
+      width: 100%; padding: 6px 8px;
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); font-size: .9em;
+    }
+    select:focus, input[type=number]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(238,58,92,.25); }
+
+    .toggle-row { display: flex; gap: 5px; }
+    .tbtn {
+      flex: 1; padding: 6px 7px; text-align: center; cursor: pointer;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: var(--bg3); color: var(--muted); font-size: .83em;
+      user-select: none; transition: all .12s;
+    }
+    .tbtn:hover { border-color: #6b5688; color: var(--text); }
+    .tbtn.act-gold  { border-color: var(--accent); color: var(--accent2); background: rgba(238,58,92,.08); }
+    .tbtn.act-green { border-color: var(--green);  color: #5cc47e; background: rgba(63,157,95,.08); }
+    .tbtn.act-red   { border-color: var(--red);    color: #f2596b; background: rgba(207,47,63,.08); }
+
+    .hint { font-size: .73em; color: var(--muted); margin-top: 4px; }
+
+    /* results */
+    .res-top { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 14px; }
+    @media(max-width:480px){ .res-top{ flex-direction: column; } }
+
+    .chance-ring {
+      width: 96px; height: 96px; border-radius: 50%; flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border: 2px solid var(--border);
+    }
+    .ring-pct { font-size: 1.8em; font-weight: 700; line-height: 1; }
+    .ring-lbl { font-size: .58em; text-transform: uppercase; letter-spacing: 1px; color: var(--slate); margin-top: 1px; }
+    .rg-good   { border-color: var(--green); }
+    .rg-good   .ring-pct { color: #5cc47e; }
+    .rg-mid    { border-color: #d99a3a; }
+    .rg-mid    .ring-pct { color: #e6ad4e; }
+    .rg-bad    { border-color: var(--red); }
+    .rg-bad    .ring-pct { color: #f2596b; }
+
+    .kv-list { flex: 1; }
+    .kv {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 4px 0; border-bottom: 1px solid var(--border); gap: 10px; font-size: .87em;
+    }
+    .kv:last-child { border-bottom: none; }
+    .kv-k { color: var(--muted); }
+    .kv-v { color: var(--text); font-weight: 700; }
+    .v-gold  { color: var(--accent2); }
+    .v-green { color: #5cc47e; }
+    .v-red   { color: #f2596b; }
+
+    hr.div { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+    .sub-lbl {
+      font-size: .7em; text-transform: uppercase; letter-spacing: .8px;
+      color: var(--slate); font-weight: 700; margin: 10px 0 5px;
+    }
+    .mat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 9px; margin-bottom: 3px;
+      background: var(--bg3); border-radius: 4px; border-left: 2px solid var(--border);
+      font-size: .87em;
+    }
+    .mat-qty { font-weight: 700; color: var(--accent2); }
+
+    .raw-box {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 4px; padding: 9px; margin-top: 4px;
+    }
+    .raw-title { font-size: .68em; text-transform: uppercase; letter-spacing: .8px; color: var(--slate); font-weight: 700; margin-bottom: 5px; }
+
+    .zeny-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 9px; margin-bottom: 3px;
+      background: var(--bg3); border-radius: 4px; font-size: .87em;
+    }
+    .zeny-k { color: var(--muted); }
+    .zeny-v { color: var(--accent2); font-weight: 700; }
+    .zeny-total { border: 1px solid var(--border); background: rgba(238,58,92,.05) !important; }
+    .zeny-total .zeny-k { color: var(--text); }
+    .zeny-total .zeny-v { font-size: 1.08em; }
+
+    .exp-box {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 4px; padding: 11px; margin-top: 11px;
+    }
+    .exp-title { font-size: .68em; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 7px; }
+    .pbar-track { height: 3px; background: var(--border); border-radius: 2px; margin-top: 9px; }
+    .pbar-fill  { height: 100%; border-radius: 2px; background: var(--accent); transition: width .3s; }
+    .exp-note   { font-size: .72em; color: var(--muted); margin-top: 6px; }
+
+    .warn-box {
+      padding: 11px; border-radius: 4px;
+      background: rgba(207,47,63,.1); border: 1px solid var(--red);
+      color: #f2596b; font-size: .88em;
+    }
+
+    /* table */
+    table { width: 100%; border-collapse: collapse; font-size: .83em; }
+    th {
+      background: var(--bg3); color: var(--slate); padding: 6px 8px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: .6px;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 5px 8px; text-align: center; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr.hl td { background: rgba(238,58,92,.1); color: var(--accent2) !important; font-weight: 700; }
+    .na { color: #4e3f66; }
+
+    /* refine section */
+    .refine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media(max-width:700px){ .refine-grid{ grid-template-columns: 1fr; } }
+    .ore-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 5px 9px; margin-bottom: 3px;
+      background: var(--bg3); border-radius: 4px; font-size: .83em; gap: 8px;
+    }
+    .ore-name { color: var(--text); }
+    .ore-range { color: var(--muted); font-size: .85em; white-space: nowrap; }
+    .ore-pen { font-size: .78em; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border); color: var(--muted); }
+    .pen-3r  { border-color: #5f4c25; color: #d99a3a; }
+    .pen-1r  { border-color: #3f4f66; color: #8fa1bd; }
+    .pen-des { border-color: #5f3340; color: #ef6a6a; }
+    .ore-npc { font-size: .78em; color: var(--muted); margin-top: 2px; }
+    .tab-row { display: flex; gap: 5px; margin-bottom: 10px; }
+    .tab-btn {
+      padding: 4px 12px; border-radius: 3px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--bg3);
+      color: var(--muted); font-size: .8em; user-select: none;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { border-color: var(--accent); color: var(--accent2); background: rgba(238,58,92,.08); }
+    footer { font-size: .73em; color: var(--ink-soft); text-align: center; padding: 14px; border-top: 1px solid #d8b98a; margin-top: 16px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
+      <span class="toggle-label">Itens</span>
+      <span>&#8942;</span>
+    </div>
+    <div class="sidebar-inner">
+
+      <details class="igrp" open>
+        <summary>Materiais de Grau</summary>
+        <ul class="llist">
+          <li><a href="https://www.divine-pride.net/database/item/1000322" target="_blank">Pó de Éter</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000323" target="_blank">Pedra de Éter</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000337" target="_blank">Bênção de Éter</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/6635" target="_blank">Bênção do Ferreiro</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/720" target="_blank">Aquamarina</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000325" target="_blank">Aquamarina de Éter</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/728" target="_blank">Topázio</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000326" target="_blank">Topázio de Éter</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/719" target="_blank">Ametista</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000327" target="_blank">Ametista de Éter</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000321" target="_blank">Âmbar</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000328" target="_blank">Âmbar de Éter</a></li>
+        </ul>
+      </details>
+
+      <details class="igrp">
+        <summary>Minérios Arma Nv.5</summary>
+        <ul class="llist">
+          <li><a href="https://www.divine-pride.net/database/item/1000332" target="_blank">Eteridecon</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000334" target="_blank">Eteridecon Enriquecido</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000336" target="_blank">Eteridecon Perfeito</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000368" target="_blank">Bradium de Éter</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000369" target="_blank">Bradium de Éter Perfeito</a></li>
+        </ul>
+      </details>
+
+      <details class="igrp">
+        <summary>Minérios Armadura Nv.2</summary>
+        <ul class="llist">
+          <li><a href="https://www.divine-pride.net/database/item/1000331" target="_blank">Eterium</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000333" target="_blank">Eterium Enriquecido</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000335" target="_blank">Eterium Perfeito</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000370" target="_blank">Carnium de Étel</a></li>
+          <li><a href="https://www.divine-pride.net/database/item/1000371" target="_blank">Carnium Perfeito de Étel</a></li>
+        </ul>
+      </details>
+
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="page-title">Calculadora de Grau</div>
+    <div class="page-sub">Ragnarök Online — Sistema de Grau &nbsp;·&nbsp; <a href="https://browiki.org/wiki/Grau" target="_blank">bROWiki</a></div>
+
+    <div class="grade-strip">
+      <span class="gbadge">Sem Grau — +8,00/refino · 0%</span>
+      <span class="gbadge">[D] — +8,80/refino · <strong>+10%</strong></span>
+      <span class="gbadge">[C] — +10,4/refino · <strong>+30%</strong></span>
+      <span class="gbadge">[B] — +12,0/refino · <strong>+50%</strong></span>
+      <span class="gbadge">[A] — +16,0/refino · <strong>+100%</strong></span>
+    </div>
+
+    <!-- 3-COLUMN TOP GRID -->
+    <div class="top-grid">
+
+      <!-- COL 1: Configuração -->
+      <div>
+        <div class="col-label">Configuração</div>
+        <div class="card">
+          <div class="form-grid">
+            <div class="fg">
+              <label>Grau Atual</label>
+              <select id="sel-grade" onchange="onGradeChange()">
+                <option value="none">Sem Grau</option>
+                <option value="d">Grau D</option>
+                <option value="c">Grau C</option>
+                <option value="b">Grau B</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Grau Alvo</label>
+              <select id="sel-target" disabled></select>
+            </div>
+            <div class="fg">
+              <label>Nível de Refino</label>
+              <select id="sel-refine" onchange="onRefineChange()"></select>
+            </div>
+            <div class="fg">
+              <label>Evento de Grau</label>
+              <div class="toggle-row">
+                <div class="tbtn act-gold" id="btn-no-event" onclick="setEvent(false)">Sem Evento</div>
+                <div class="tbtn" id="btn-yes-event" onclick="setEvent(true)">Evento</div>
+              </div>
+            </div>
+            <div class="fg" style="grid-column:span 2">
+              <label>Processo</label>
+              <div class="toggle-row">
+                <div class="tbtn act-red" id="btn-normal" onclick="setProcess('normal')">⚠ Normal</div>
+                <div class="tbtn" id="btn-safe" onclick="setProcess('safe')">🛡 Seguro (5×)</div>
+              </div>
+              <div class="hint" id="process-hint"></div>
+            </div>
+            <div class="fg" style="grid-column:span 2">
+              <label>Bênção de Éter (opcional)</label>
+              <input type="number" id="inp-bless" min="0" value="0" oninput="onBlessChange()">
+              <div class="hint" id="hint-bless"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 2: Custo de Mercado -->
+      <div>
+        <div class="col-label">Preços de Mercado <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-soft)">— opcional</span></div>
+        <div class="card">
+          <div class="hint" style="margin-bottom:10px">Insira os preços do servidor para calcular o custo total.</div>
+          <div class="ipc">
+            <img class="ipc-icon" src="https://www.divine-pride.net/img/items/collection/iRO/1000322" alt="Pó de Éter" onerror="this.style.visibility='hidden'">
+            <span class="ipc-name">Pó de Éter</span>
+            <div class="ipc-input">
+              <input type="text" id="p-po" oninput="formatPrice(this);calc()" placeholder="0" autocomplete="off">
+              <span class="price-unit">z</span>
+            </div>
+          </div>
+          <div class="ipc" id="pr-gem-row">
+            <img class="ipc-icon" id="pr-gem-icon" src="https://www.divine-pride.net/img/items/collection/iRO/720" alt="Aquamarina" onerror="this.style.visibility='hidden'">
+            <span class="ipc-name" id="pr-gem-lbl">Aquamarina</span>
+            <div class="ipc-input">
+              <input type="text" id="p-gem" oninput="formatPrice(this);calc()" placeholder="0" autocomplete="off">
+              <span class="price-unit">z</span>
+            </div>
+          </div>
+          <div class="ipc" id="pr-ferr-row" style="display:none">
+            <img class="ipc-icon" src="https://www.divine-pride.net/img/items/collection/iRO/1000337" alt="Bênção de Éter" onerror="this.style.visibility='hidden'">
+            <span class="ipc-name">Bênção de Éter</span>
+            <div class="ipc-input">
+              <input type="text" id="p-ferr" oninput="formatPrice(this);calc()" placeholder="0" autocomplete="off">
+              <span class="price-unit">z</span>
+            </div>
+          </div>
+          <hr class="div" style="margin:10px 0">
+          <div id="market-total"></div>
+        </div>
+      </div>
+
+      <!-- COL 3: Resultado -->
+      <div>
+        <div class="col-label">Resultado</div>
+        <div class="card"><div id="results"></div></div>
+      </div>
+
+    </div><!-- /top-grid -->
+
+    <!-- ═══ SIMULADOR DE REFINO ═══ -->
+    <div class="section-label" style="margin-top:18px">Simulador de Refino — Item Gradeado (D+)
+      <span style="text-transform:none;letter-spacing:0;color:var(--ink-soft)">— custo e minérios esperados até o refino alvo</span>
+    </div>
+
+    <div class="top-grid">
+
+      <!-- CONFIG -->
+      <div>
+        <div class="col-label">Configuração do Refino</div>
+        <div class="card">
+          <div class="form-grid">
+            <div class="fg">
+              <label>Equipamento</label>
+              <select id="sim-equip" onchange="onSimConfig()">
+                <option value="weapon">Arma Nv.5</option>
+                <option value="armor">Armadura Nv.2</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Evento de Refino</label>
+              <div class="toggle-row">
+                <div class="tbtn act-gold" id="sim-ev-no" onclick="setSimEvent(false)">Sem Evento</div>
+                <div class="tbtn" id="sim-ev-yes" onclick="setSimEvent(true)">Evento</div>
+              </div>
+            </div>
+            <div class="fg">
+              <label>Refino inicial</label>
+              <input type="number" id="sim-start" min="0" max="19" value="0" oninput="onSimConfig()">
+            </div>
+            <div class="fg">
+              <label>Refino alvo</label>
+              <input type="number" id="sim-target" min="1" max="20" value="11" oninput="onSimConfig()">
+            </div>
+            <div class="fg">
+              <label>Minério +0~+9</label>
+              <select id="sim-lowcat" onchange="onSimConfig()">
+                <option value="com">Comum (−3 na falha)</option>
+                <option value="esp">Enriquecido (−1 na falha)</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Minério +10 acima</label>
+              <select id="sim-hicat" onchange="onSimConfig()">
+                <option value="com">Comum (perde item)</option>
+                <option value="esp">Perfeito (perde item)</option>
+              </select>
+            </div>
+            <div class="fg" style="grid-column:span 2">
+              <label>Bênção do Ferreiro (BSB) — segura o refino</label>
+              <div class="toggle-row">
+                <div class="tbtn" id="sim-bsb-no" onclick="setSimBSB(false)">Sem BSB</div>
+                <div class="tbtn act-green" id="sim-bsb-yes" onclick="setSimBSB(true)">Usar BSB</div>
+              </div>
+              <div class="form-grid" id="sim-bsb-range" style="margin-top:8px">
+                <div class="fg"><label>BSB do +</label><input type="number" id="sim-bsb-from" min="7" max="13" value="7" oninput="onSimConfig()"></div>
+                <div class="fg"><label>até o +</label><input type="number" id="sim-bsb-to" min="7" max="13" value="13" oninput="onSimConfig()"></div>
+              </div>
+              <div class="hint">BSB só funciona do +7 ao +13. Na falha o item não cai nem quebra (consome minério + BSB).</div>
+            </div>
+            <div class="fg" style="grid-column:span 2">
+              <label>Como você obtém o minério</label>
+              <div class="toggle-row">
+                <div class="tbtn act-gold" id="sim-obt-craft" onclick="setSimObtain('craft')">Crafto (base + pó)</div>
+                <div class="tbtn" id="sim-obt-buy" onclick="setSimObtain('buy')">Compro pronto</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREÇOS -->
+      <div>
+        <div class="col-label">Preços <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-soft)">— opcional</span></div>
+        <div class="card">
+          <div class="hint" id="sim-price-hint" style="margin-bottom:10px"></div>
+          <div id="sim-ore-list"></div>
+          <div class="ipc" id="sim-po-row">
+            <span class="ipc-name">Pó de Éter</span>
+            <div class="ipc-input"><input type="text" id="sim-po" oninput="formatPrice(this);simCalc()" placeholder="0" autocomplete="off"><span class="price-unit">z</span></div>
+          </div>
+          <div class="ipc" id="sim-bsb-price-row">
+            <span class="ipc-name">Bênção do Ferreiro</span>
+            <div class="ipc-input"><input type="text" id="sim-bsbprice" oninput="formatPrice(this);simCalc()" placeholder="0" autocomplete="off"><span class="price-unit">z</span></div>
+          </div>
+          <div class="fg" style="margin-top:10px">
+            <label>BSB consumida por tentativa</label>
+            <input type="number" id="sim-bsbper" min="1" value="1" oninput="onSimConfig()">
+            <div class="hint">Confira no jogo/bROWiki quantas BSB o seu refino gasta por tentativa.</div>
+          </div>
+          <hr class="div" style="margin:10px 0">
+          <div id="sim-cost"></div>
+        </div>
+      </div>
+
+      <!-- RESULTADO -->
+      <div>
+        <div class="col-label">Resultado do Refino</div>
+        <div class="card"><div id="sim-results"></div></div>
+      </div>
+
+    </div><!-- /top-grid sim -->
+
+    <!-- Tabela de Chances de Grau (colapsada) -->
+    <details class="collapsible">
+      <summary>Tabela de Chances de Grau <span id="tbl-lbl" style="text-transform:none;letter-spacing:0;margin-left:6px;color:var(--muted)">— Sem Evento</span></summary>
+      <div class="det-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Refino</th>
+              <th>Nenhum → D</th>
+              <th>D → C</th>
+              <th>C → B</th>
+              <th>B → A</th>
+            </tr>
+          </thead>
+          <tbody id="chances-body"></tbody>
+        </table>
+        <div class="hint" style="margin-top:7px">Linha destacada = seu refino atual. Válido para Armas Nv.5 e Armaduras Nv.2.</div>
+      </div>
+    </details>
+
+    <!-- REFINE SECTION -->
+    <div class="section-label" style="margin-top:14px">Refinamento — Arma Nv.5 &amp; Armadura Nv.2 <a href="https://browiki.org/wiki/Refinamento" target="_blank" style="font-size:.85em;letter-spacing:0;text-transform:none">↗ bROWiki</a></div>
+
+    <div class="refine-grid" style="margin-bottom:10px">
+      <div class="card">
+        <div class="sub-lbl" style="margin-top:0">Minérios — Arma Nv.5</div>
+        <div class="ore-row"><span><span class="ore-name">Eteridecon</span><span class="ore-range"> +0~+9</span><br><span class="ore-npc">10.000z + 1 Oridecon + 1 Pó de Éter</span></span><span class="ore-pen pen-3r">-3 refinos</span></div>
+        <div class="ore-row"><span><span class="ore-name">Eteridecon Enriquecido</span><span class="ore-range"> +0~+9</span><br><span class="ore-npc">20.000z + 1 Ori.Enriq. + 2 Pó de Éter</span></span><span class="ore-pen pen-1r">-1 refino</span></div>
+        <div class="ore-row"><span><span class="ore-name">Bradium de Éter</span><span class="ore-range"> +10~+19</span><br><span class="ore-npc">30.000z + 1 Bradium + 3 Pó de Éter</span></span><span class="ore-pen pen-des">Perde item</span></div>
+        <div class="ore-row"><span><span class="ore-name">Eteridecon Perfeito</span><span class="ore-range"> +10~+14</span><br><span class="ore-npc">50.000z + 1 Ori.Perfeito + 3 Pó de Éter</span></span><span class="ore-pen pen-des">Perde item</span></div>
+        <div class="ore-row"><span><span class="ore-name">Bradium de Éter Perfeito</span><span class="ore-range"> +15~+19</span><br><span class="ore-npc">50.000z + 1 Brad.Perfeito + 3 Pó de Éter</span></span><span class="ore-pen pen-des">Perde item</span></div>
+        <div class="hint" style="margin-top:6px">Limite seguro (100%): até +3.</div>
+      </div>
+      <div class="card">
+        <div class="sub-lbl" style="margin-top:0">Minérios — Armadura Nv.2</div>
+        <div class="ore-row"><span><span class="ore-name">Eterium</span><span class="ore-range"> +0~+9</span><br><span class="ore-npc">10.000z + 1 Elunium + 1 Pó de Éter</span></span><span class="ore-pen pen-3r">-3 refinos</span></div>
+        <div class="ore-row"><span><span class="ore-name">Eterium Enriquecido</span><span class="ore-range"> +0~+9</span><br><span class="ore-npc">20.000z + 1 Elu.Enriq. + 2 Pó de Éter</span></span><span class="ore-pen pen-1r">-1 refino</span></div>
+        <div class="ore-row"><span><span class="ore-name">Carnium de Étel</span><span class="ore-range"> +10~+19</span><br><span class="ore-npc">50.000z + 1 Carnium + 3 Pó de Éter</span></span><span class="ore-pen pen-des">Perde item</span></div>
+        <div class="ore-row"><span><span class="ore-name">Eterium Perfeito</span><span class="ore-range"> +10~+14</span><br><span class="ore-npc">50.000z + 1 Elu.Perfeito + 3 Pó de Éter</span></span><span class="ore-pen pen-des">Perde item</span></div>
+        <div class="ore-row"><span><span class="ore-name">Carnium Perfeito de Étel</span><span class="ore-range"> +15~+19</span><br><span class="ore-npc">50.000z + 1 Carn.Perfeito + 3 Pó de Éter</span></span><span class="ore-pen pen-des">Perde item</span></div>
+        <div class="hint" style="margin-top:6px">Limite seguro (100%): até +3.</div>
+      </div>
+    </div>
+
+    <!-- Tabela de chances de Refino (colapsada) -->
+    <details class="collapsible">
+      <summary>Chances de Sucesso — Refinamento</summary>
+      <div class="det-body">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+          <div class="tab-row" style="margin-bottom:0">
+            <div class="tab-btn active" id="r-tab-com" onclick="setRefineTab('com')">Minérios Comuns</div>
+            <div class="tab-btn" id="r-tab-esp" onclick="setRefineTab('esp')">Minérios Especiais</div>
+          </div>
+          <div class="tab-row" style="margin-bottom:0">
+            <div class="tab-btn active" id="r-tab-nev" onclick="setRefineEvent(false)">Sem Evento</div>
+            <div class="tab-btn" id="r-tab-ev" onclick="setRefineEvent(true)">Evento de Refino</div>
+          </div>
+          <span id="r-hint" class="hint" style="margin-top:0"></span>
+        </div>
+        <table id="refine-tbl">
+          <thead>
+            <tr><th>Refino</th><th>Arma Nv.5</th><th>Armadura Nv.2</th><th>Penalidade (falha)</th></tr>
+          </thead>
+          <tbody id="refine-body"></tbody>
+        </table>
+        <div class="hint" style="margin-top:7px">Bênção do Ferreiro funciona somente no +7 ao +13.</div>
+      </div>
+    </details>
+
+    <footer>
+      Dados de <a href="https://browiki.org/wiki/Grau" target="_blank">bROWiki</a> e <a href="https://www.divine-pride.net/" target="_blank">Divine Pride</a>.
+    </footer>
+  </div>
+</div>
+
+<script>
+const GRADES = {
+  none_to_d: {
+    label:'Nenhum → Grau D', material:'Aquamarina de Éter',
+    qN:1, qS:5, fN:100000, fS:500000, bPer:1, minR:9,
+    ch:{ 9:[10,20],10:[20,30],11:[70,80],12:[70,80],13:[70,80],14:[70,80],15:[70,80],16:[80,90],17:[80,90],18:[80,90],19:[80,90],20:[80,90] }
+  },
+  d_to_c: {
+    label:'Grau D → Grau C', material:'Topázio de Éter',
+    qN:1, qS:5, fN:125000, fS:625000, bPer:3, minR:10,
+    ch:{ 10:[20,30],11:[60,70],12:[60,70],13:[60,70],14:[60,70],15:[60,70],16:[70,80],17:[70,80],18:[70,80],19:[70,80],20:[70,80] }
+  },
+  c_to_b: {
+    label:'Grau C → Grau B', material:'Ametista de Éter',
+    qN:1, qS:5, fN:200000, fS:1000000, bPer:5, minR:11,
+    ch:{ 11:[50,60],12:[50,60],13:[50,60],14:[50,60],15:[50,60],16:[60,70],17:[60,70],18:[60,70],19:[60,70],20:[60,70] }
+  },
+  b_to_a: {
+    label:'Grau B → Grau A', material:'Âmbar de Éter',
+    qN:2, qS:10, fN:500000, fS:2500000, bPer:7, minR:11,
+    ch:{ 11:[40,50],12:[40,50],13:[40,50],14:[40,50],15:[40,50],16:[50,60],17:[50,60],18:[50,60],19:[50,60],20:[50,60] }
+  }
+};
+const CRAFT = {
+  'Aquamarina de Éter':{ npc:100000, pedra:3,  gem:'Aquamarina', gemId:720      },
+  'Topázio de Éter':   { npc:200000, pedra:6,  gem:'Topázio',    gemId:728      },
+  'Ametista de Éter':  { npc:300000, pedra:10, gem:'Ametista',   gemId:719      },
+  'Âmbar de Éter':     { npc:500000, pedra:15, gem:'Âmbar',      gemId:1000321  },
+};
+const GK = { none:'none_to_d', d:'d_to_c', c:'c_to_b', b:'b_to_a' };
+const NG = { none:'d', d:'c', c:'b', b:'a' };
+const GL = { none:'Sem Grau', d:'Grau D', c:'Grau C', b:'Grau B', a:'Grau A' };
+const S  = { grade:'none', refine:11, process:'normal', event:false, bless:0 };
+const D  = () => GRADES[GK[S.grade]];
+
+function zf(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(n%1000000===0?0:1).replace('.',',')+'kk z';
+  return (n/1000).toFixed(0)+'k z';
+}
+
+function setProcess(p) {
+  S.process = p;
+  document.getElementById('btn-normal').className = 'tbtn'+(p==='normal'?' act-red':'');
+  document.getElementById('btn-safe').className   = 'tbtn'+(p==='safe'?' act-green':'');
+  document.getElementById('process-hint').innerHTML = p==='normal'
+    ? 'Falha = item <b style="color:#f2596b">destruído permanentemente</b>. Usa 1 minério.'
+    : 'Falha = item <b style="color:#5cc47e">preservado</b>. Usa 5× (ou 10×) mais minério.';
+  calc();
+}
+
+function setEvent(e) {
+  S.event = e;
+  document.getElementById('btn-no-event').className  = 'tbtn'+(!e?' act-gold':'');
+  document.getElementById('btn-yes-event').className = 'tbtn'+(e?' act-gold':'');
+  document.getElementById('tbl-lbl').textContent = e ? '— Evento Ativo' : '— Sem Evento';
+  buildTable(); calc();
+}
+
+function onGradeChange() {
+  S.grade = document.getElementById('sel-grade').value;
+  document.getElementById('sel-target').innerHTML =
+    `<option value="${NG[S.grade]}">${GL[NG[S.grade]]}</option>`;
+  const d = D(), prev = parseInt(document.getElementById('sel-refine').value)||d.minR;
+  const sr = document.getElementById('sel-refine');
+  sr.innerHTML = '';
+  for (let r=d.minR;r<=20;r++){
+    const o=document.createElement('option');
+    o.value=r; o.textContent='+'+r;
+    if(r===Math.max(prev,d.minR)) o.selected=true;
+    sr.appendChild(o);
+  }
+  S.refine=parseInt(sr.value);
+  document.getElementById('hint-bless').innerHTML =
+    `+1% a cada <b>${d.bPer}</b> bênção(s) · Máx: +10% (${d.bPer*10} bênçãos)`;
+  buildTable(); calc();
+}
+
+function onRefineChange() {
+  S.refine=parseInt(document.getElementById('sel-refine').value);
+  buildTable(); calc();
+}
+
+function onBlessChange() {
+  const d=D(), max=d.bPer*10;
+  let v=parseInt(document.getElementById('inp-bless').value)||0;
+  if(v<0)v=0; if(v>max){v=max;document.getElementById('inp-bless').value=max;}
+  S.bless=v; calc();
+}
+
+function gv(id) {
+  const raw = document.getElementById(id).value.replace(/\./g,'').replace(/\D/g,'');
+  return raw === '' ? 0 : parseInt(raw, 10);
+}
+
+function formatPrice(input) {
+  const raw = input.value.replace(/\./g,'').replace(/\D/g,'');
+  if (!raw) { input.value = ''; return; }
+  const n = parseInt(raw, 10);
+  input.value = n.toLocaleString('pt-BR');
+}
+
+function calc() {
+  const d=D(), ei=S.event?1:0, div=document.getElementById('results');
+  const ca=d.ch[S.refine];
+  if(!ca){
+    div.innerHTML=`<div class="warn-box">Refino +${S.refine} inválido para esta transição. Mínimo: <b>+${d.minR}</b></div>`;
+    document.getElementById('market-total').innerHTML='';
+    return;
+  }
+  const base=ca[ei], bonus=Math.floor(S.bless/d.bPer), total=Math.min(100,base+bonus);
+  const isSafe=S.process==='safe';
+  const qty=isSafe?d.qS:d.qN, fee=isSafe?d.fS:d.fN;
+  const mat=CRAFT[d.material];
+  const craftFee=(mat.npc+mat.pedra*100000)*qty;
+  const po=(mat.pedra*qty)*5 + S.bless*5;
+  const bFee=S.bless*100000;
+  const grandNPC=fee+craftFee+bFee;
+
+  // market prices
+  const pPo   = gv('p-po');
+  const pGem  = gv('p-gem');
+  const pFerr = gv('p-ferr');
+  const marketPerAttempt = po*pPo + qty*pGem + S.bless*pFerr;
+  const totalPerAttempt  = grandNPC + marketPerAttempt;
+  const hasMarket = (pPo>0||pGem>0||pFerr>0);
+
+  // update gem label + icon
+  document.getElementById('pr-gem-lbl').textContent = mat.gem;
+  const gemIcon = document.getElementById('pr-gem-icon');
+  gemIcon.style.visibility = 'visible';
+  gemIcon.src = `https://www.divine-pride.net/img/items/collection/iRO/${mat.gemId}`;
+  gemIcon.alt = mat.gem;
+  document.getElementById('pr-ferr-row').style.display = S.bless>0 ? 'flex' : 'none';
+
+  const exp=total>0?(100/total):Infinity;
+  const expNPC  = total>0?Math.round(exp*grandNPC):Infinity;
+  const expMkt  = total>0?Math.round(exp*marketPerAttempt):Infinity;
+  const expTotal= total>0?Math.round(exp*totalPerAttempt):Infinity;
+  const rc=total>=60?'rg-good':total>=35?'rg-mid':'rg-bad';
+
+  // ── market total panel (col 2) ──
+  const mt = document.getElementById('market-total');
+  mt.innerHTML = `
+    <div class="sub-lbl" style="margin-top:0;margin-bottom:6px">Por tentativa</div>
+    <div class="zeny-row"><span class="zeny-k">NPC (taxas + craft)</span><span class="zeny-v">${zf(grandNPC)}</span></div>
+    <div class="zeny-row"><span class="zeny-k">Mercado (gemas + pó${S.bless>0?' + bênçãos':''})</span><span class="zeny-v">${hasMarket?zf(marketPerAttempt):'—'}</span></div>
+    <div class="zeny-row zeny-total"><span class="zeny-k">Total / tentativa</span><span class="zeny-v">${hasMarket?zf(totalPerAttempt):zf(grandNPC)}</span></div>
+    ${total>0?`
+    <div class="sub-lbl" style="margin-top:10px;margin-bottom:6px">Esperado (~${exp.toFixed(1)} tentativas)</div>
+    <div class="zeny-row"><span class="zeny-k">NPC esperado</span><span class="zeny-v">${zf(expNPC)}</span></div>
+    ${hasMarket?`<div class="zeny-row"><span class="zeny-k">Mercado esperado</span><span class="zeny-v">${zf(expMkt)}</span></div>`:''}
+    <div class="zeny-row zeny-total"><span class="zeny-k">TOTAL esperado</span><span class="zeny-v v-gold">${hasMarket?zf(expTotal):zf(expNPC)}</span></div>
+    `:''}
+    ${!hasMarket?`<div class="hint" style="margin-top:6px">Insira pre\u00e7os de mercado acima para ver o custo total real.</div>`:''}
+  `;
+
+  // ── results panel (col 3) ──
+  div.innerHTML=`
+    <div class="res-top">
+      <div class="chance-ring ${rc}">
+        <div class="ring-pct">${total}%</div>
+        <div class="ring-lbl">Sucesso</div>
+      </div>
+      <div class="kv-list">
+        <div class="kv"><span class="kv-k">Transição</span><span class="kv-v">${d.label}</span></div>
+        <div class="kv"><span class="kv-k">Refino</span><span class="kv-v">+${S.refine}</span></div>
+        <div class="kv"><span class="kv-k">Chance base</span><span class="kv-v">${base}%</span></div>
+        <div class="kv"><span class="kv-k">Bônus bênçãos</span><span class="kv-v v-green">+${bonus}%</span></div>
+        <div class="kv"><span class="kv-k">Chance total</span><span class="kv-v v-gold">${total}%</span></div>
+        <div class="kv"><span class="kv-k">Em caso de falha</span><span class="kv-v ${isSafe?'v-green':'v-red'}">${isSafe?'Item preservado':'Item DESTRUÍDO'}</span></div>
+        <div class="kv"><span class="kv-k">Tentativas esperadas</span><span class="kv-v">~${exp.toFixed(2)}</span></div>
+      </div>
+    </div>
+    <hr class="div">
+    <div class="sub-lbl">Materiais por tentativa — ${isSafe?'Seguro':'Normal'}</div>
+    <div class="mat-row"><span>${d.material}</span><span class="mat-qty">× ${qty}</span></div>
+    ${S.bless>0?`<div class="mat-row"><span>Bênção de Éter</span><span class="mat-qty">× ${S.bless}</span></div>`:''}
+    <div class="raw-box">
+      <div class="raw-title">Materiais brutos</div>
+      <div class="mat-row"><span>Pó de Éter</span><span class="mat-qty">× ${po}</span></div>
+      <div class="mat-row"><span>${mat.gem} <span style="color:var(--muted);font-size:.85em">(mercado)</span></span><span class="mat-qty">× ${qty}</span></div>
+      ${S.bless>0?`<div class="mat-row"><span>Bênção de Éter</span><span class="mat-qty">× ${S.bless}</span></div>`:''}
+    </div>
+    <div class="pbar-track" style="margin-top:10px"><div class="pbar-fill" style="width:${total}%"></div></div>
+    <div class="exp-note" style="margin-top:6px">${isSafe
+      ?'Processo seguro: item nunca é destruído.'
+      :'⚠ Processo normal: item destruído em falha.'
+    }</div>`;
+}
+
+function buildTable() {
+  const ei=S.event?1:0, tb=document.getElementById('chances-body');
+  tb.innerHTML='';
+  for(let r=9;r<=20;r++){
+    const nd=GRADES.none_to_d.ch[r], dc=GRADES.d_to_c.ch[r],
+          cb=GRADES.c_to_b.ch[r],   ba=GRADES.b_to_a.ch[r];
+    const hl=r===S.refine;
+    const tr=document.createElement('tr');
+    if(hl) tr.className='hl';
+    const c=a=>a?`<td>${a[ei]}%</td>`:`<td class="na">—</td>`;
+    tr.innerHTML=`<td>+${r}</td>${c(nd)}${c(dc)}${c(cb)}${c(ba)}`;
+    tb.appendChild(tr);
+  }
+}
+
+function init(){
+  onGradeChange();
+  setProcess('normal');
+  setEvent(false);
+}
+init();
+
+// ── Refine section ──────────────────────────────────────
+const RS = { tab:'com', event:false };
+
+// [noEvent%, event%]
+const REFINE_COM = {
+  // common ores, Arma Nv.5 = Armadura Nv.2 (same values)
+  1:[100,100],2:[100,100],3:[100,100],
+  4:[60,80],5:[60,80],6:[40,60],7:[40,60],8:[20,40],9:[20,40],
+  10:[9,18],11:[8,16],12:[8,16],13:[8,16],14:[8,16],
+  15:[7,14],16:[7,14],17:[7,14],18:[7,14],19:[5,10],20:[5,10]
+};
+const REFINE_ESP = {
+  // special ores, Arma Nv.5 = Armadura Nv.2
+  1:[100,100],2:[100,100],3:[100,100],
+  4:[90,95],5:[70,85],6:[60,70],7:[60,65],8:[40,55],9:[40,45],
+  10:[25,25],11:[20,20],12:[20,20],13:[20,20],14:[20,20],
+  15:[15,15],16:[15,15],17:[15,15],18:[15,15],19:[10,10],20:[10,10]
+};
+
+function setRefineTab(t) {
+  RS.tab = t;
+  document.getElementById('r-tab-com').className = 'tab-btn'+(t==='com'?' active':'');
+  document.getElementById('r-tab-esp').className = 'tab-btn'+(t==='esp'?' active':'');
+  const hint = t==='com'
+    ? 'Eteridecon / Eterium (+0~+9) &nbsp;·&nbsp; Bradium de Éter / Carnium de Étel (+10~+19)'
+    : 'Enriquecido (+0~+9) &nbsp;·&nbsp; Perfeito (+10~+14 ou +15~+19)';
+  document.getElementById('r-hint').innerHTML = hint;
+  buildRefineTable();
+}
+
+function setRefineEvent(e) {
+  RS.event = e;
+  document.getElementById('r-tab-nev').className = 'tab-btn'+(!e?' active':'');
+  document.getElementById('r-tab-ev').className  = 'tab-btn'+(e?' active':'');
+  buildRefineTable();
+}
+
+function buildRefineTable() {
+  const ei = RS.event ? 1 : 0;
+  const data = RS.tab === 'com' ? REFINE_COM : REFINE_ESP;
+  const penLo = RS.tab === 'com' ? 'Perde 3 refinos' : 'Perde 1 refino';
+  const tb = document.getElementById('refine-body');
+  tb.innerHTML = '';
+  for (let r = 1; r <= 20; r++) {
+    const arr = data[r];
+    const pct = arr[ei];
+    const isHL = r === S.refine;
+    const pen = r >= 10 ? 'Perde item' : (pct === 100 ? '—' : penLo);
+    const penColor = pen === 'Perde item' ? '#ef6a6a' : pen === '—' ? '#4e3f66' : '#d99a3a';
+    const tr = document.createElement('tr');
+    if (isHL) tr.className = 'hl';
+    tr.innerHTML = `<td>+${r}</td><td>${pct}%</td><td>${pct}%</td><td style="color:${penColor}">${pen}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+setRefineTab('com');
+setRefineEvent(false);
+
+// ══════════════════════════════════════════════════════════
+// SIMULADOR DE REFINO (item gradeado)
+// ══════════════════════════════════════════════════════════
+const SIM = { equip:'weapon', start:0, target:11, event:false,
+              lowCat:'com', hiCat:'com', useBSB:true, bsbFrom:7, bsbTo:13,
+              obtain:'craft', bsbPer:1 };
+const simPriceCache = {};
+
+// receita de cada minério especial (taxa NPC + minério-base + pó de éter)
+const SIM_ORE = {
+  weapon: {
+    low:   { com:{name:'Eteridecon',                base:'Oridecon',          npc:10000, po:1},
+             esp:{name:'Eteridecon Enriquecido',    base:'Oridecon Enriq.',   npc:20000, po:2} },
+    hiCom: {name:'Bradium de Éter',                 base:'Bradium',           npc:30000, po:3},
+    hi10:  {name:'Eteridecon Perfeito',             base:'Oridecon Perfeito', npc:50000, po:3},
+    hi15:  {name:'Bradium de Éter Perfeito',        base:'Bradium Perfeito',  npc:50000, po:3}
+  },
+  armor: {
+    low:   { com:{name:'Eterium',                   base:'Elunium',           npc:10000, po:1},
+             esp:{name:'Eterium Enriquecido',       base:'Elunium Enriq.',    npc:20000, po:2} },
+    hiCom: {name:'Carnium de Étel',                 base:'Carnium',           npc:50000, po:3},
+    hi10:  {name:'Eterium Perfeito',                base:'Elunium Perfeito',  npc:50000, po:3},
+    hi15:  {name:'Carnium Perfeito de Étel',        base:'Carnium Perfeito',  npc:50000, po:3}
+  }
+};
+
+function oreAt(r) {
+  const E = SIM_ORE[SIM.equip];
+  if (r <= 9) return SIM.lowCat === 'com' ? E.low.com : E.low.esp;
+  if (SIM.hiCat === 'com') return E.hiCom;      // Bradium/Carnium comum +10~+19
+  return r <= 14 ? E.hi10 : E.hi15;             // Perfeito +10~+14 / +15~+19
+}
+function catAt(r) { return r <= 9 ? SIM.lowCat : SIM.hiCat; }
+function succAt(r, ei) {
+  const t = catAt(r) === 'com' ? REFINE_COM : REFINE_ESP;
+  return (t[r] !== undefined ? t[r][ei] : 100) / 100;   // r=0 e faixa segura = 100%
+}
+function bsbActive(r) { return SIM.useBSB && r >= SIM.bsbFrom && r <= SIM.bsbTo; }
+
+function slug(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').toLowerCase(); }
+function pval(id){ const el=document.getElementById(id); if(!el) return 0;
+  const raw=el.value.replace(/\./g,'').replace(/\D/g,''); return raw===''?0:parseInt(raw,10); }
+function cacheSimPrice(name,el){ simPriceCache[name]=el.value; }
+
+// resolve A·x = b por eliminação de Gauss (n pequeno)
+function linSolve(A, b){
+  const n=b.length, M=A.map((row,i)=>row.slice().concat(b[i]));
+  for(let c=0;c<n;c++){
+    let piv=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[piv][c])) piv=r;
+    if(Math.abs(M[piv][c])<1e-12) continue;
+    [M[c],M[piv]]=[M[piv],M[c]];
+    const d=M[c][c]; for(let j=c;j<=n;j++) M[c][j]/=d;
+    for(let r=0;r<n;r++) if(r!==c){ const f=M[r][c]; if(f) for(let j=c;j<=n;j++) M[r][j]-=f*M[c][j]; }
+  }
+  return M.map(row=>row[n]);
+}
+
+// cadeia de Markov: estados = níveis 0..T-1 (transitórios), T = sucesso, item quebrado = falha absorvente
+function simSolve(){
+  const T=SIM.target, ei=SIM.event?1:0, n=T;
+  const A=Array.from({length:n},()=>new Array(n).fill(0));
+  const bsuc=new Array(n).fill(0);
+  let dead=false;
+  for(let r=0;r<T;r++){
+    const p=succAt(r,ei);
+    if(r+1===T) bsuc[r]+=p; else A[r][r+1]+=p;   // sucesso → sobe 1
+    const q=1-p;
+    if(q>1e-12){
+      let dest;
+      if(bsbActive(r)) dest=r;                    // BSB: segura o nível
+      else if(r<=9){ dest=Math.max(0, r-(SIM.lowCat==='com'?3:1)); } // cai N níveis
+      else { dest=-1; dead=true; }                // +10 sem BSB → item quebra
+      if(dest>=0) A[r][dest]+=q;
+    }
+  }
+  // prob. de sucesso: (I−A)Q = bsuc
+  const IA=Array.from({length:n},(_,i)=>A[i].map((v,j)=>(i===j?1:0)-v));
+  const Q=linSolve(IA,bsuc);
+  // visitas esperadas por nível: (I−Aᵀ)V = e_start
+  const IAt=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>(i===j?1:0)-A[j][i]));
+  const e=new Array(n).fill(0); e[Math.min(SIM.start,n-1)]=1;
+  const V=linSolve(IAt,e);
+  return { V, success:Q[Math.min(SIM.start,n-1)], dead };
+}
+
+// ── lista de preços dinâmica (um campo por minério da jornada) ──
+function simOres(){
+  const seen={}, list=[];
+  for(let r=0;r<SIM.target;r++){ const o=oreAt(r); if(!seen[o.name]){ seen[o.name]=1; list.push(o); } }
+  return list;
+}
+function buildSimPrices(){
+  // guarda valores atuais antes de recriar
+  document.querySelectorAll('#sim-ore-list input').forEach(el=>{ if(el.dataset.name) simPriceCache[el.dataset.name]=el.value; });
+  const craft = SIM.obtain==='craft';
+  const html = simOres().map(o=>{
+    const label = craft
+      ? `${o.base} <span style="color:var(--muted);font-size:.82em">→ ${o.name}</span>`
+      : o.name;
+    const val = simPriceCache[o.name] ? ` value="${simPriceCache[o.name]}"` : '';
+    return `<div class="ipc"><span class="ipc-name">${label}</span>`
+      + `<div class="ipc-input"><input type="text" id="sim-ore-${slug(o.name)}" data-name="${o.name}"${val}`
+      + ` oninput="formatPrice(this);cacheSimPrice(this.dataset.name,this);simCalc()" placeholder="0" autocomplete="off">`
+      + `<span class="price-unit">z</span></div></div>`;
+  }).join('');
+  document.getElementById('sim-ore-list').innerHTML = html;
+  document.getElementById('sim-po-row').style.display = craft ? 'flex' : 'none';
+  document.getElementById('sim-price-hint').textContent = craft
+    ? 'Preço do minério-base + Pó de Éter (a taxa de NPC já está inclusa no cálculo).'
+    : 'Preço do minério já pronto para refinar.';
+}
+
+function clampSim(id,min,max,def){
+  const el=document.getElementById(id); let v=parseInt(el.value);
+  if(isNaN(v)) return def;
+  if(v>max){ v=max; el.value=max; }
+  if(v<min){ v=min; el.value=min; }
+  return v;
+}
+function readSim(){
+  SIM.equip  = document.getElementById('sim-equip').value;
+  SIM.lowCat = document.getElementById('sim-lowcat').value;
+  SIM.hiCat  = document.getElementById('sim-hicat').value;
+  SIM.start  = clampSim('sim-start',0,19,0);
+  SIM.target = clampSim('sim-target',1,20,11);
+  if(SIM.target<=SIM.start){ SIM.target=SIM.start+1; document.getElementById('sim-target').value=SIM.target; }
+  SIM.bsbFrom= clampSim('sim-bsb-from',7,13,7);
+  SIM.bsbTo  = clampSim('sim-bsb-to',7,13,13);
+  if(SIM.bsbTo<SIM.bsbFrom){ SIM.bsbTo=SIM.bsbFrom; document.getElementById('sim-bsb-to').value=SIM.bsbTo; }
+  SIM.bsbPer = clampSim('sim-bsbper',1,999,1);
+}
+function onSimConfig(){ readSim(); buildSimPrices(); simCalc(); }
+
+function setSimEvent(e){
+  SIM.event=e;
+  document.getElementById('sim-ev-no').className ='tbtn'+(!e?' act-gold':'');
+  document.getElementById('sim-ev-yes').className='tbtn'+( e?' act-gold':'');
+  simCalc();
+}
+function setSimBSB(b){
+  SIM.useBSB=b;
+  document.getElementById('sim-bsb-no').className ='tbtn'+(!b?' act-red':'');
+  document.getElementById('sim-bsb-yes').className='tbtn'+( b?' act-green':'');
+  document.getElementById('sim-bsb-range').style.display    = b?'grid':'none';
+  document.getElementById('sim-bsb-price-row').style.display= b?'flex':'none';
+  simCalc();
+}
+function setSimObtain(o){
+  SIM.obtain=o;
+  document.getElementById('sim-obt-craft').className='tbtn'+(o==='craft'?' act-gold':'');
+  document.getElementById('sim-obt-buy').className  ='tbtn'+(o==='buy'  ?' act-gold':'');
+  buildSimPrices(); simCalc();
+}
+
+function simCalc(){
+  const res=simSolve(), V=res.V;
+  const poPrice=pval('sim-po'), bsbPrice=pval('sim-bsbprice'), craft=SIM.obtain==='craft';
+
+  const oreCount={}; let attempts=0, poTotal=0, bsbCount=0, oreCost=0;
+  for(let r=0;r<SIM.target;r++){
+    const v=V[r]; if(!(v>1e-9)) continue;
+    const o=oreAt(r);
+    attempts+=v;
+    oreCount[o.name]=(oreCount[o.name]||0)+v;
+    poTotal+=v*o.po;
+    if(bsbActive(r)) bsbCount+=v*SIM.bsbPer;
+    const price=pval('sim-ore-'+slug(o.name));
+    oreCost += v*(craft ? (o.npc + price + o.po*poPrice) : price);
+  }
+  const bsbCost=bsbCount*bsbPrice;
+  const total=oreCost+bsbCost;
+  const hasPrices = total>0;
+  const success=res.success, dead=res.dead;
+  const factor = (dead && success>1e-9) ? 1/success : 1;  // p/ garantir 1 item no alvo
+
+  // ── painel de resultado (col 3) ──
+  const pct=Math.round(success*100);
+  const rc = success>=0.999?'rg-good':success>=0.6?'rg-mid':'rg-bad';
+  const oreRows=Object.keys(oreCount).map(nm=>
+    `<div class="mat-row"><span>${nm}</span><span class="mat-qty">× ${Math.ceil(oreCount[nm]*factor).toLocaleString('pt-BR')}</span></div>`).join('');
+
+  document.getElementById('sim-results').innerHTML=`
+    <div class="res-top">
+      <div class="chance-ring ${rc}">
+        <div class="ring-pct">${dead?pct+'%':'100%'}</div>
+        <div class="ring-lbl">${dead?'chega ao alvo':'garantido'}</div>
+      </div>
+      <div class="kv-list">
+        <div class="kv"><span class="kv-k">Jornada</span><span class="kv-v">+${SIM.start} → +${SIM.target}</span></div>
+        <div class="kv"><span class="kv-k">Tentativas esperadas</span><span class="kv-v v-gold">~${(attempts*factor).toFixed(1)}</span></div>
+        <div class="kv"><span class="kv-k">Minérios (total)</span><span class="kv-v">~${Math.ceil(attempts*factor).toLocaleString('pt-BR')}</span></div>
+        ${SIM.useBSB?`<div class="kv"><span class="kv-k">BSB usadas</span><span class="kv-v v-green">~${Math.ceil(bsbCount*factor).toLocaleString('pt-BR')}</span></div>`:''}
+        ${craft?`<div class="kv"><span class="kv-k">Pó de Éter</span><span class="kv-v">~${Math.ceil(poTotal*factor).toLocaleString('pt-BR')}</span></div>`:''}
+        ${dead?`<div class="kv"><span class="kv-k">Itens gastos (média)</span><span class="kv-v v-red">~${factor.toFixed(2)}</span></div>`:''}
+      </div>
+    </div>
+    <hr class="div">
+    <div class="sub-lbl">Minérios por tipo${dead?' — para garantir 1 no +'+SIM.target:''}</div>
+    ${oreRows}
+    ${dead?`<div class="warn-box" style="margin-top:10px">Sem BSB acima do +9, a falha <b>destrói o item</b>. Chance de um item chegar ao +${SIM.target}: <b>${pct}%</b> — em média <b>${factor.toFixed(2)} itens</b> são consumidos. Considere usar BSB no trecho +10~+13.</div>`
+      :`<div class="exp-note" style="margin-top:8px">BSB segura o nível de +${SIM.bsbFrom} a +${SIM.bsbTo}: o item nunca cai nem quebra nesse trecho.</div>`}`;
+
+  // ── painel de custo (col 2) ──
+  const zt=n=>zf(Math.round(n));
+  document.getElementById('sim-cost').innerHTML = !hasPrices
+    ? `<div class="hint">Insira os preços acima para ver o custo estimado${dead?' (para garantir 1 item no alvo)':''}.</div>`
+    : `<div class="sub-lbl" style="margin-top:0;margin-bottom:6px">Custo esperado${dead?' — 1 item no +'+SIM.target:' — +'+SIM.start+' → +'+SIM.target}</div>
+       <div class="zeny-row"><span class="zeny-k">Minérios${craft?' (base+pó+NPC)':''}</span><span class="zeny-v">${zt(oreCost*factor)}</span></div>
+       ${SIM.useBSB&&bsbPrice>0?`<div class="zeny-row"><span class="zeny-k">BSB</span><span class="zeny-v">${zt(bsbCost*factor)}</span></div>`:''}
+       <div class="zeny-row zeny-total"><span class="zeny-k">Total esperado</span><span class="zeny-v v-gold">${zt(total*factor)}</span></div>`;
+}
+
+function simInit(){
+  readSim();
+  setSimEvent(false); setSimBSB(true); setSimObtain('craft');
+  buildSimPrices(); simCalc();
+}
+simInit();
+</script>
+</body>
+</html>
