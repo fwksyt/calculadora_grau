@@ -417,7 +417,7 @@
             </div>
             <div class="fg">
               <label>Grau Alvo</label>
-              <select id="sel-target" disabled></select>
+              <select id="sel-target" onchange="onTargetChange()"></select>
             </div>
             <div class="fg">
               <label>Nível de Refino</label>
@@ -460,14 +460,7 @@
               <span class="price-unit">z</span>
             </div>
           </div>
-          <div class="ipc" id="pr-gem-row">
-            <img class="ipc-icon" id="pr-gem-icon" src="https://www.divine-pride.net/img/items/collection/iRO/720" alt="Aquamarina" onerror="this.style.visibility='hidden'">
-            <span class="ipc-name" id="pr-gem-lbl">Aquamarina</span>
-            <div class="ipc-input">
-              <input type="text" id="p-gem" oninput="formatPrice(this);calc()" placeholder="0" autocomplete="off">
-              <span class="price-unit">z</span>
-            </div>
-          </div>
+          <div id="gem-rows"></div>
           <div class="ipc" id="pr-ferr-row" style="display:none">
             <img class="ipc-icon" src="https://www.divine-pride.net/img/items/collection/iRO/1000337" alt="Bênção de Éter" onerror="this.style.visibility='hidden'">
             <span class="ipc-name">Bênção de Éter</span>
@@ -699,8 +692,12 @@ const CRAFT = {
 const GK = { none:'none_to_d', d:'d_to_c', c:'c_to_b', b:'b_to_a' };
 const NG = { none:'d', d:'c', c:'b', b:'a' };
 const GL = { none:'Sem Grau', d:'Grau D', c:'Grau C', b:'Grau B', a:'Grau A' };
-const S  = { grade:'none', refine:11, process:'normal', event:false, bless:0 };
+const S  = { grade:'none', target:'d', refine:11, process:'normal', event:false, bless:0 };
 const D  = () => GRADES[GK[S.grade]];
+
+// cadeia de transições do grau atual até o alvo
+function chainKeys(){ const l=[]; let g=S.grade; while(g!==S.target){ l.push(GK[g]); g=NG[g]; } return l; }
+function chainMinR(){ return Math.max(...chainKeys().map(k=>GRADES[k].minR)); }
 
 function zf(n) {
   if (n >= 1000000) return (n/1000000).toFixed(n%1000000===0?0:1).replace('.',',')+'kk z';
@@ -727,21 +724,57 @@ function setEvent(e) {
 
 function onGradeChange() {
   S.grade = document.getElementById('sel-grade').value;
-  document.getElementById('sel-target').innerHTML =
-    `<option value="${NG[S.grade]}">${GL[NG[S.grade]]}</option>`;
-  const d = D(), prev = parseInt(document.getElementById('sel-refine').value)||d.minR;
+  const st = document.getElementById('sel-target'), prevT = S.target;
+  st.innerHTML = '';
+  const opts = []; let g = NG[S.grade];
+  while (true) { opts.push(g); if (g === 'a') break; g = NG[g]; }
+  opts.forEach(o => {
+    const el = document.createElement('option');
+    el.value = o; el.textContent = GL[o];
+    st.appendChild(el);
+  });
+  st.value = opts.includes(prevT) ? prevT : opts[0];
+  onTargetChange();
+}
+
+function onTargetChange() {
+  S.target = document.getElementById('sel-target').value;
+  const minR = chainMinR();
   const sr = document.getElementById('sel-refine');
+  const prev = parseInt(sr.value) || minR;
   sr.innerHTML = '';
-  for (let r=d.minR;r<=20;r++){
+  for (let r=minR;r<=20;r++){
     const o=document.createElement('option');
     o.value=r; o.textContent='+'+r;
-    if(r===Math.max(prev,d.minR)) o.selected=true;
+    if(r===Math.max(prev,minR)) o.selected=true;
     sr.appendChild(o);
   }
   S.refine=parseInt(sr.value);
-  document.getElementById('hint-bless').innerHTML =
-    `+1% a cada <b>${d.bPer}</b> bênção(s) · Máx: +10% (${d.bPer*10} bênçãos)`;
+  const chain = chainKeys();
+  const maxB = Math.max(...chain.map(k=>GRADES[k].bPer))*10;
+  if (S.bless > maxB) { S.bless = maxB; document.getElementById('inp-bless').value = maxB; }
+  document.getElementById('hint-bless').innerHTML = chain.length === 1
+    ? `+1% a cada <b>${GRADES[chain[0]].bPer}</b> bênção(s) · Máx: +10% (${GRADES[chain[0]].bPer*10} bênçãos)`
+    : chain.map(k=>`→${k.slice(-1).toUpperCase()}: 1%/<b>${GRADES[k].bPer}</b>`).join(' · ') + ' bênçãos · Máx +10% por etapa';
+  buildMarketRows();
   buildTable(); calc();
+}
+
+// linhas de preço de gema — uma por etapa da jornada
+const mktCache = {};
+function cacheMktPrice(name, el){ mktCache[name] = el.value; }
+function buildMarketRows(){
+  document.querySelectorAll('#gem-rows input').forEach(el=>{ if(el.dataset.name) mktCache[el.dataset.name]=el.value; });
+  document.getElementById('gem-rows').innerHTML = chainKeys().map(k=>{
+    const mat = CRAFT[GRADES[k].material];
+    const val = mktCache[mat.gem] ? ` value="${mktCache[mat.gem]}"` : '';
+    return `<div class="ipc">`
+      + `<img class="ipc-icon" src="https://www.divine-pride.net/img/items/collection/iRO/${mat.gemId}" alt="${mat.gem}" onerror="this.style.visibility='hidden'">`
+      + `<span class="ipc-name">${mat.gem}</span>`
+      + `<div class="ipc-input"><input type="text" id="p-gem-${slug(mat.gem)}" data-name="${mat.gem}"${val}`
+      + ` oninput="formatPrice(this);cacheMktPrice(this.dataset.name,this);calc()" placeholder="0" autocomplete="off">`
+      + `<span class="price-unit">z</span></div></div>`;
+  }).join('');
 }
 
 function onRefineChange() {
@@ -750,7 +783,7 @@ function onRefineChange() {
 }
 
 function onBlessChange() {
-  const d=D(), max=d.bPer*10;
+  const max=Math.max(...chainKeys().map(k=>GRADES[k].bPer))*10;
   let v=parseInt(document.getElementById('inp-bless').value)||0;
   if(v<0)v=0; if(v>max){v=max;document.getElementById('inp-bless').value=max;}
   S.bless=v; calc();
@@ -769,92 +802,138 @@ function formatPrice(input) {
 }
 
 function calc() {
-  const d=D(), ei=S.event?1:0, div=document.getElementById('results');
-  const ca=d.ch[S.refine];
-  if(!ca){
-    div.innerHTML=`<div class="warn-box">Refino +${S.refine} inválido para esta transição. Mínimo: <b>+${d.minR}</b></div>`;
-    document.getElementById('market-total').innerHTML='';
-    return;
-  }
-  const base=ca[ei], bonus=Math.floor(S.bless/d.bPer), total=Math.min(100,base+bonus);
-  const isSafe=S.process==='safe';
-  const qty=isSafe?d.qS:d.qN, fee=isSafe?d.fS:d.fN;
-  const mat=CRAFT[d.material];
-  const craftFee=(mat.npc+mat.pedra*100000)*qty;
-  const po=(mat.pedra*qty)*5 + S.bless*5;
-  const bFee=S.bless*100000;
-  const grandNPC=fee+craftFee+bFee;
-
-  // market prices
-  const pPo   = gv('p-po');
-  const pGem  = gv('p-gem');
-  const pFerr = gv('p-ferr');
-  const marketPerAttempt = po*pPo + qty*pGem + S.bless*pFerr;
-  const totalPerAttempt  = grandNPC + marketPerAttempt;
-  const hasMarket = (pPo>0||pGem>0||pFerr>0);
-
-  // update gem label + icon
-  document.getElementById('pr-gem-lbl').textContent = mat.gem;
-  const gemIcon = document.getElementById('pr-gem-icon');
-  gemIcon.style.visibility = 'visible';
-  gemIcon.src = `https://www.divine-pride.net/img/items/collection/iRO/${mat.gemId}`;
-  gemIcon.alt = mat.gem;
+  const ei=S.event?1:0, div=document.getElementById('results');
+  const chain=chainKeys(), n=chain.length, isSafe=S.process==='safe';
+  const pPo=gv('p-po'), pFerr=gv('p-ferr');
   document.getElementById('pr-ferr-row').style.display = S.bless>0 ? 'flex' : 'none';
 
-  const exp=total>0?(100/total):Infinity;
-  const expNPC  = total>0?Math.round(exp*grandNPC):Infinity;
-  const expMkt  = total>0?Math.round(exp*marketPerAttempt):Infinity;
-  const expTotal= total>0?Math.round(exp*totalPerAttempt):Infinity;
-  const rc=total>=60?'rg-good':total>=35?'rg-mid':'rg-bad';
+  // dados de cada etapa da jornada
+  const steps=[];
+  for(const k of chain){
+    const d=GRADES[k], ca=d.ch[S.refine];
+    if(!ca){
+      div.innerHTML=`<div class="warn-box">Refino +${S.refine} inválido para esta jornada. Mínimo: <b>+${chainMinR()}</b></div>`;
+      document.getElementById('market-total').innerHTML='';
+      return;
+    }
+    const base=ca[ei], bonus=Math.min(10,Math.floor(S.bless/d.bPer)), total=Math.min(100,base+bonus);
+    const qty=isSafe?d.qS:d.qN, fee=isSafe?d.fS:d.fN;
+    const mat=CRAFT[d.material];
+    const po=(mat.pedra*qty)*5 + S.bless*5;
+    const npc=fee+(mat.npc+mat.pedra*100000)*qty+S.bless*100000;
+    const pGem=gv('p-gem-'+slug(mat.gem));
+    steps.push({d,base,bonus,total,p:total/100,qty,mat,po,npc,market:po*pPo+qty*pGem+S.bless*pFerr,hasGem:pGem>0});
+  }
+
+  // tentativas esperadas por etapa:
+  //  seguro: 1/p (item preservado, etapas independentes)
+  //  normal: falha destrói o item e a jornada recomeça — V_i = 1/(p_i*p_{i+1}*...*p_n)
+  const V=new Array(n);
+  if(isSafe){ for(let i=0;i<n;i++) V[i]=steps[i].p>0?1/steps[i].p:Infinity; }
+  else{ let acc=1; for(let i=n-1;i>=0;i--){ acc*=steps[i].p; V[i]=acc>0?1/acc:Infinity; } }
+  const finite=V.every(isFinite);
+  const attempts=V.reduce((a,v)=>a+v,0);
+  const expNPC=steps.reduce((a,s,i)=>a+V[i]*s.npc,0);
+  const expMkt=steps.reduce((a,s,i)=>a+V[i]*s.market,0);
+  const hasMarket=pPo>0||pFerr>0||steps.some(s=>s.hasGem);
+  const direct=Math.round(steps.reduce((a,s)=>a*s.p,1)*100);
+  const itemsUsed=isSafe?1:steps.reduce((a,s,i)=>a+V[i]*(1-s.p),0)+1;
+  const first=steps[0];
+  const fmt=v=>finite?zf(Math.round(v)):'∞';
+  const fcnt=v=>finite?Math.ceil(v).toLocaleString('pt-BR'):'∞';
 
   // ── market total panel (col 2) ──
-  const mt = document.getElementById('market-total');
-  mt.innerHTML = `
+  const mt=document.getElementById('market-total');
+  if(n===1){
+    mt.innerHTML=`
     <div class="sub-lbl" style="margin-top:0;margin-bottom:6px">Por tentativa</div>
-    <div class="zeny-row"><span class="zeny-k">NPC (taxas + craft)</span><span class="zeny-v">${zf(grandNPC)}</span></div>
-    <div class="zeny-row"><span class="zeny-k">Mercado (gemas + pó${S.bless>0?' + bênçãos':''})</span><span class="zeny-v">${hasMarket?zf(marketPerAttempt):'—'}</span></div>
-    <div class="zeny-row zeny-total"><span class="zeny-k">Total / tentativa</span><span class="zeny-v">${hasMarket?zf(totalPerAttempt):zf(grandNPC)}</span></div>
-    ${total>0?`
-    <div class="sub-lbl" style="margin-top:10px;margin-bottom:6px">Esperado (~${exp.toFixed(1)} tentativas)</div>
-    <div class="zeny-row"><span class="zeny-k">NPC esperado</span><span class="zeny-v">${zf(expNPC)}</span></div>
-    ${hasMarket?`<div class="zeny-row"><span class="zeny-k">Mercado esperado</span><span class="zeny-v">${zf(expMkt)}</span></div>`:''}
-    <div class="zeny-row zeny-total"><span class="zeny-k">TOTAL esperado</span><span class="zeny-v v-gold">${hasMarket?zf(expTotal):zf(expNPC)}</span></div>
+    <div class="zeny-row"><span class="zeny-k">NPC (taxas + craft)</span><span class="zeny-v">${zf(first.npc)}</span></div>
+    <div class="zeny-row"><span class="zeny-k">Mercado (gemas + pó${S.bless>0?' + bênçãos':''})</span><span class="zeny-v">${hasMarket?zf(first.market):'—'}</span></div>
+    <div class="zeny-row zeny-total"><span class="zeny-k">Total / tentativa</span><span class="zeny-v">${zf(first.npc+(hasMarket?first.market:0))}</span></div>
+    ${finite?`
+    <div class="sub-lbl" style="margin-top:10px;margin-bottom:6px">Esperado (~${V[0].toFixed(1)} tentativas)</div>
+    <div class="zeny-row"><span class="zeny-k">NPC esperado</span><span class="zeny-v">${fmt(expNPC)}</span></div>
+    ${hasMarket?`<div class="zeny-row"><span class="zeny-k">Mercado esperado</span><span class="zeny-v">${fmt(expMkt)}</span></div>`:''}
+    <div class="zeny-row zeny-total"><span class="zeny-k">TOTAL esperado</span><span class="zeny-v v-gold">${fmt(expNPC+(hasMarket?expMkt:0))}</span></div>
     `:''}
-    ${!hasMarket?`<div class="hint" style="margin-top:6px">Insira pre\u00e7os de mercado acima para ver o custo total real.</div>`:''}
-  `;
+    ${!hasMarket?`<div class="hint" style="margin-top:6px">Insira preços de mercado acima para ver o custo total real.</div>`:''}`;
+  } else {
+    mt.innerHTML=`
+    <div class="sub-lbl" style="margin-top:0;margin-bottom:6px">Custo esperado por etapa</div>
+    ${steps.map((s,i)=>`<div class="zeny-row"><span class="zeny-k">${s.d.label}</span><span class="zeny-v">${fmt(V[i]*(s.npc+s.market))}</span></div>`).join('')}
+    <div class="sub-lbl" style="margin-top:10px;margin-bottom:6px">Jornada completa (~${finite?attempts.toFixed(1):'∞'} tentativas)</div>
+    <div class="zeny-row"><span class="zeny-k">NPC esperado</span><span class="zeny-v">${fmt(expNPC)}</span></div>
+    ${hasMarket?`<div class="zeny-row"><span class="zeny-k">Mercado esperado</span><span class="zeny-v">${fmt(expMkt)}</span></div>`:''}
+    <div class="zeny-row zeny-total"><span class="zeny-k">TOTAL esperado</span><span class="zeny-v v-gold">${fmt(expNPC+(hasMarket?expMkt:0))}</span></div>
+    ${!hasMarket?`<div class="hint" style="margin-top:6px">Insira preços de mercado acima para ver o custo total real.</div>`:''}`;
+  }
 
   // ── results panel (col 3) ──
-  div.innerHTML=`
+  if(n===1){
+    const rc=first.total>=60?'rg-good':first.total>=35?'rg-mid':'rg-bad';
+    div.innerHTML=`
     <div class="res-top">
       <div class="chance-ring ${rc}">
-        <div class="ring-pct">${total}%</div>
+        <div class="ring-pct">${first.total}%</div>
         <div class="ring-lbl">Sucesso</div>
       </div>
       <div class="kv-list">
-        <div class="kv"><span class="kv-k">Transição</span><span class="kv-v">${d.label}</span></div>
+        <div class="kv"><span class="kv-k">Transição</span><span class="kv-v">${first.d.label}</span></div>
         <div class="kv"><span class="kv-k">Refino</span><span class="kv-v">+${S.refine}</span></div>
-        <div class="kv"><span class="kv-k">Chance base</span><span class="kv-v">${base}%</span></div>
-        <div class="kv"><span class="kv-k">Bônus bênçãos</span><span class="kv-v v-green">+${bonus}%</span></div>
-        <div class="kv"><span class="kv-k">Chance total</span><span class="kv-v v-gold">${total}%</span></div>
+        <div class="kv"><span class="kv-k">Chance base</span><span class="kv-v">${first.base}%</span></div>
+        <div class="kv"><span class="kv-k">Bônus bênçãos</span><span class="kv-v v-green">+${first.bonus}%</span></div>
+        <div class="kv"><span class="kv-k">Chance total</span><span class="kv-v v-gold">${first.total}%</span></div>
         <div class="kv"><span class="kv-k">Em caso de falha</span><span class="kv-v ${isSafe?'v-green':'v-red'}">${isSafe?'Item preservado':'Item DESTRUÍDO'}</span></div>
-        <div class="kv"><span class="kv-k">Tentativas esperadas</span><span class="kv-v">~${exp.toFixed(2)}</span></div>
+        <div class="kv"><span class="kv-k">Tentativas esperadas</span><span class="kv-v">${finite?'~'+V[0].toFixed(2):'∞'}</span></div>
       </div>
     </div>
     <hr class="div">
     <div class="sub-lbl">Materiais por tentativa — ${isSafe?'Seguro':'Normal'}</div>
-    <div class="mat-row"><span>${d.material}</span><span class="mat-qty">× ${qty}</span></div>
+    <div class="mat-row"><span>${first.d.material}</span><span class="mat-qty">× ${first.qty}</span></div>
     ${S.bless>0?`<div class="mat-row"><span>Bênção de Éter</span><span class="mat-qty">× ${S.bless}</span></div>`:''}
     <div class="raw-box">
       <div class="raw-title">Materiais brutos</div>
-      <div class="mat-row"><span>Pó de Éter</span><span class="mat-qty">× ${po}</span></div>
-      <div class="mat-row"><span>${mat.gem} <span style="color:var(--muted);font-size:.85em">(mercado)</span></span><span class="mat-qty">× ${qty}</span></div>
+      <div class="mat-row"><span>Pó de Éter</span><span class="mat-qty">× ${first.po}</span></div>
+      <div class="mat-row"><span>${first.mat.gem} <span style="color:var(--muted);font-size:.85em">(mercado)</span></span><span class="mat-qty">× ${first.qty}</span></div>
       ${S.bless>0?`<div class="mat-row"><span>Bênção de Éter</span><span class="mat-qty">× ${S.bless}</span></div>`:''}
     </div>
-    <div class="pbar-track" style="margin-top:10px"><div class="pbar-fill" style="width:${total}%"></div></div>
+    <div class="pbar-track" style="margin-top:10px"><div class="pbar-fill" style="width:${first.total}%"></div></div>
     <div class="exp-note" style="margin-top:6px">${isSafe
       ?'Processo seguro: item nunca é destruído.'
       :'⚠ Processo normal: item destruído em falha.'
     }</div>`;
+  } else {
+    const rc=direct>=60?'rg-good':direct>=35?'rg-mid':'rg-bad';
+    div.innerHTML=`
+    <div class="res-top">
+      <div class="chance-ring ${rc}">
+        <div class="ring-pct" style="font-size:1.5em">${direct}%</div>
+        <div class="ring-lbl">sem falhar</div>
+      </div>
+      <div class="kv-list">
+        <div class="kv"><span class="kv-k">Jornada</span><span class="kv-v">${GL[S.grade]} → ${GL[S.target]}</span></div>
+        <div class="kv"><span class="kv-k">Refino</span><span class="kv-v">+${S.refine}</span></div>
+        ${steps.map(s=>`<div class="kv"><span class="kv-k">${s.d.label}</span><span class="kv-v">${s.total}%${s.bonus>0?` <span class="v-green">(+${s.bonus}%)</span>`:''}</span></div>`).join('')}
+        <div class="kv"><span class="kv-k">Tentativas esperadas</span><span class="kv-v v-gold">${finite?'~'+attempts.toFixed(1):'∞'}</span></div>
+        <div class="kv"><span class="kv-k">Em caso de falha</span><span class="kv-v ${isSafe?'v-green':'v-red'}">${isSafe?'Item preservado':'Item DESTRUÍDO'}</span></div>
+        ${!isSafe&&finite?`<div class="kv"><span class="kv-k">Itens gastos (média)</span><span class="kv-v v-red">~${itemsUsed.toFixed(2)}</span></div>`:''}
+      </div>
+    </div>
+    <hr class="div">
+    <div class="sub-lbl">Materiais esperados — jornada completa (${isSafe?'Seguro':'Normal'})</div>
+    ${steps.map((s,i)=>`<div class="mat-row"><span>${s.d.material}</span><span class="mat-qty">× ${fcnt(V[i]*s.qty)}</span></div>`).join('')}
+    ${S.bless>0?`<div class="mat-row"><span>Bênção de Éter</span><span class="mat-qty">× ${fcnt(S.bless*attempts)}</span></div>`:''}
+    <div class="raw-box">
+      <div class="raw-title">Materiais brutos esperados</div>
+      <div class="mat-row"><span>Pó de Éter</span><span class="mat-qty">× ${fcnt(steps.reduce((a,s,i)=>a+V[i]*s.po,0))}</span></div>
+      ${steps.map((s,i)=>`<div class="mat-row"><span>${s.mat.gem} <span style="color:var(--muted);font-size:.85em">(mercado)</span></span><span class="mat-qty">× ${fcnt(V[i]*s.qty)}</span></div>`).join('')}
+    </div>
+    <div class="pbar-track" style="margin-top:10px"><div class="pbar-fill" style="width:${direct}%"></div></div>
+    <div class="exp-note" style="margin-top:6px">${isSafe
+      ?'Processo seguro: o item nunca é destruído — o esperado soma as etapas de forma independente.'
+      :'⚠ Processo normal: falha em QUALQUER etapa destrói o item e a jornada recomeça do zero — o cálculo já inclui refazer as etapas anteriores.'
+    }</div>`;
+  }
 }
 
 function buildTable() {
