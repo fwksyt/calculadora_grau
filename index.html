@@ -329,6 +329,76 @@
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { border-color: var(--accent); color: var(--accent2); background: rgba(238,58,92,.08); }
     footer { font-size: .73em; color: var(--ink-soft); text-align: center; padding: 14px; border-top: 1px solid #d8b98a; margin-top: 16px; }
+
+    /* guide modal */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(42,32,57,.65);
+      display: none; align-items: flex-start; justify-content: center;
+      padding: 30px 14px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+      max-width: 680px; width: 100%; max-height: calc(100vh - 80px);
+      overflow-y: auto; padding: 20px 22px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+    }
+    .modal-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: 1.15em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2); }
+    .modal-close {
+      cursor: pointer; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--bg3); color: var(--muted); padding: 4px 10px; font-size: .85em; user-select: none;
+    }
+    .modal-close:hover { color: var(--text); border-color: var(--accent); }
+    .guide h3 {
+      font-size: .78em; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2);
+      margin: 16px 0 6px; padding-top: 12px; border-top: 1px solid var(--border);
+    }
+    .guide h3:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+    .guide p { font-size: .87em; color: var(--text); margin-bottom: 7px; }
+    .guide ul { margin: 0 0 8px 18px; }
+    .guide li { font-size: .85em; color: var(--text); margin-bottom: 4px; }
+    .guide b { color: var(--accent2); }
+    .guide .gd-tip {
+      background: var(--bg3); border-left: 3px solid var(--green);
+      border-radius: 4px; padding: 8px 10px; font-size: .84em; margin: 8px 0;
+    }
+    .guide .gd-warn {
+      background: rgba(207,47,63,.1); border-left: 3px solid var(--red);
+      border-radius: 4px; padding: 8px 10px; font-size: .84em; margin: 8px 0; color: #f2b1ba;
+    }
+
+    /* tour guiado */
+    #tour-spot {
+      position: fixed; z-index: 70; pointer-events: none;
+      border: 2px solid var(--accent); border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(42,32,57,.55), 0 0 18px rgba(238,58,92,.55);
+      transition: all .45s cubic-bezier(.4,0,.2,1);
+    }
+    #tour-tip {
+      position: fixed; z-index: 71; width: 300px;
+      background: var(--bg2); border: 1px solid var(--accent); border-radius: 8px;
+      padding: 12px 14px; box-shadow: 0 8px 30px rgba(0,0,0,.5);
+      transition: top .45s cubic-bezier(.4,0,.2,1), left .45s cubic-bezier(.4,0,.2,1);
+    }
+    #tour-tip .tt-step { font-size: .68em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+    #tour-tip .tt-text { font-size: .86em; line-height: 1.5; color: var(--text); }
+    #tour-tip .tt-text b { color: var(--accent2); }
+    #tour-tip .tt-btns { display: flex; gap: 6px; margin-top: 10px; }
+    #tour-tip .tt-btn {
+      flex: 1; text-align: center; cursor: pointer; padding: 5px 8px;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: var(--bg3); color: var(--muted); font-size: .78em; user-select: none; white-space: nowrap;
+    }
+    #tour-tip .tt-btn:hover { color: var(--text); border-color: var(--accent); }
+    #tour-tip .tt-btn.primary { border-color: var(--accent); color: var(--accent2); background: rgba(238,58,92,.1); }
+    #tour-tip .tt-bar { height: 2px; background: var(--border); border-radius: 1px; margin-top: 9px; overflow: hidden; }
+    #tour-tip .tt-bar > div { height: 100%; background: var(--accent); width: 0; }
+    @keyframes ttbar { from { width: 0 } to { width: 100% } }
   </style>
 </head>
 <body>
@@ -341,6 +411,15 @@
       <span>&#8942;</span>
     </div>
     <div class="sidebar-inner">
+
+      <details class="igrp" open>
+        <summary>Como Usar</summary>
+        <ul class="llist">
+          <li><a href="#" onclick="tourGrau();return false">▶ Ver na prática — Grau</a></li>
+          <li><a href="#" onclick="tourSim();return false">▶ Ver na prática — Refino</a></li>
+          <li><a href="#" onclick="openGuide('gd-dicas');return false">💡 Dicas rápidas</a></li>
+        </ul>
+      </details>
 
       <details class="igrp" open>
         <summary>Materiais de Grau</summary>
@@ -660,6 +739,29 @@
   </div>
 </div>
 
+<!-- GUIA DE USO -->
+<div class="modal-overlay" id="guide-overlay" onclick="if(event.target===this)closeGuide()">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Dicas Rápidas</span>
+      <span class="modal-close" onclick="closeGuide()">✕ Fechar (Esc)</span>
+    </div>
+    <div class="guide">
+
+      <h3 id="gd-dicas">Dicas rápidas</h3>
+      <ul>
+        <li><b>Refine antes de graduar:</b> a chance de grau melhora com o refino (+16 dá um salto). Compare o custo de refinar mais alto vs. tentar o grau com chance menor.</li>
+        <li><b>BSB no +10~+13 quase sempre compensa</b> — acima do +9 a falha sem BSB destrói o item gradeado (e todo o investimento).</li>
+        <li><b>Espere os eventos:</b> evento de refino e de grau mudam bastante o custo esperado. Simule com e sem evento para ver a diferença.</li>
+        <li><b>Preencha os preços do seu servidor:</b> o custo de NPC é a menor parte — as gemas e minérios de mercado é que pesam.</li>
+        <li><b>Tabelas de referência:</b> as seções recolhidas no fim da página mostram todas as chances de grau e refino, com a linha do seu refino atual destacada.</li>
+        <li><b>Quer ver o passo a passo?</b> Use os tours <b>"Ver na prática"</b> no menu lateral — eles preenchem a calculadora sozinhos, explicando cada campo.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
 <script>
 const GRADES = {
   none_to_d: {
@@ -957,6 +1059,163 @@ function init(){
   setEvent(false);
 }
 init();
+
+// ── dicas (modal) ──
+function openGuide(sec){
+  document.getElementById('guide-overlay').classList.add('open');
+  const el=document.getElementById(sec);
+  if(el && el.scrollIntoView) el.scrollIntoView({block:'start'});
+}
+function closeGuide(){ document.getElementById('guide-overlay').classList.remove('open'); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeGuide(); tourStop(); } });
+
+// ── tour guiado "ver na prática" ─────────────────────────
+const TOUR = { steps:null, i:-1, timer:null, dur:0, paused:false, active:false };
+const tourWait = ms => new Promise(r=>setTimeout(r,ms));
+function tourZ(){ return parseFloat(getComputedStyle(document.body).zoom)||1; }
+
+// digita um preço dígito a dígito, disparando o oninput real do campo
+async function typePrice(id, digits){
+  const el=document.getElementById(id); if(!el) return;
+  el.value='';
+  for(const ch of digits){
+    el.value=el.value.replace(/\./g,'')+ch;
+    el.dispatchEvent(new Event('input'));
+    await tourWait(75);
+  }
+}
+
+function tourStart(steps){
+  tourStop(); closeGuide();
+  if(!document.getElementById('tour-spot')){
+    const s=document.createElement('div'); s.id='tour-spot'; document.body.appendChild(s);
+    const t=document.createElement('div'); t.id='tour-tip'; document.body.appendChild(t);
+  }
+  TOUR.steps=steps; TOUR.i=-1; TOUR.active=true; TOUR.paused=false;
+  tourNext();
+}
+
+async function tourRun(){
+  const st=TOUR.steps[TOUR.i];
+  if(st.do){ try{ await st.do(); }catch(e){} }
+  await tourWait(60);
+  const el=st.el?document.querySelector(st.el):null;
+  if(el && el.scrollIntoView){ el.scrollIntoView({behavior:'smooth',block:'center'}); await tourWait(430); }
+  if(!TOUR.active) return;
+  const tip=document.getElementById('tour-tip');
+  TOUR.dur = st.ms || Math.max(3400, 2200 + st.text.length*32);
+  tip.innerHTML=`<div class="tt-step">Passo ${TOUR.i+1} de ${TOUR.steps.length}</div>
+    <div class="tt-text">${st.text}</div>
+    <div class="tt-btns">
+      <div class="tt-btn" onclick="tourStop()">✕ Sair</div>
+      <div class="tt-btn" id="tt-pause" onclick="tourPause()">⏸ Pausar</div>
+      <div class="tt-btn primary" onclick="tourNext()">Avançar ▸</div>
+    </div>
+    <div class="tt-bar"><div id="tt-bar" style="animation:ttbar ${TOUR.dur}ms linear forwards"></div></div>`;
+  tourPos();
+  clearTimeout(TOUR.timer);
+  if(!TOUR.paused) TOUR.timer=setTimeout(tourNext, TOUR.dur);
+}
+
+function tourPos(){
+  if(!TOUR.active || TOUR.i<0) return;
+  const st=TOUR.steps[TOUR.i];
+  const spot=document.getElementById('tour-spot'), tip=document.getElementById('tour-tip');
+  if(!spot||!tip) return;
+  const Z=tourZ(), vw=window.innerWidth/Z, vh=window.innerHeight/Z;
+  const el=st.el?document.querySelector(st.el):null;
+  if(el){
+    const r=el.getBoundingClientRect();
+    spot.style.display='block';
+    spot.style.left=(r.left/Z-6)+'px'; spot.style.top=(r.top/Z-6)+'px';
+    spot.style.width=(r.width/Z+12)+'px'; spot.style.height=(r.height/Z+12)+'px';
+  } else spot.style.display='none';
+  const tw=tip.offsetWidth, th=tip.offsetHeight;
+  let tl, tt;
+  if(el){
+    const r=el.getBoundingClientRect(), rl=r.left/Z, rt=r.top/Z, rh=r.height/Z;
+    tl=Math.min(Math.max(10,rl), vw-tw-10);
+    tt=rt+rh+16;
+    if(tt+th>vh-10) tt=rt-th-16;
+    if(tt<10) tt=10;
+  } else { tl=(vw-tw)/2; tt=(vh-th)/2; }
+  tip.style.left=tl+'px'; tip.style.top=tt+'px';
+}
+window.addEventListener('resize', tourPos);
+window.addEventListener('scroll', tourPos, true);
+
+function tourNext(){
+  if(!TOUR.active) return;
+  clearTimeout(TOUR.timer);
+  TOUR.i++;
+  if(TOUR.i>=TOUR.steps.length){ tourStop(); return; }
+  tourRun();
+}
+
+function tourPause(){
+  if(!TOUR.active) return;
+  TOUR.paused=!TOUR.paused;
+  const b=document.getElementById('tt-pause'), bar=document.getElementById('tt-bar');
+  if(b) b.textContent=TOUR.paused?'▶ Continuar':'⏸ Pausar';
+  if(bar) bar.style.animationPlayState=TOUR.paused?'paused':'running';
+  clearTimeout(TOUR.timer);
+  if(!TOUR.paused) TOUR.timer=setTimeout(tourNext, Math.max(2000, TOUR.dur/2));
+}
+
+function tourStop(){
+  if(!TOUR.active && !document.getElementById('tour-spot')) return;
+  TOUR.active=false; clearTimeout(TOUR.timer);
+  const s=document.getElementById('tour-spot'), t=document.getElementById('tour-tip');
+  if(s) s.remove(); if(t) t.remove();
+}
+
+function tourGrau(){
+  tourStart([
+    {text:'Bem-vindo! Vou simular um cálculo real: <b>Sem Grau → Grau A</b> no <b>+13</b>. Os campos vão se preencher sozinhos — só observe. Use <b>⏸</b> para ler com calma ou <b>Avançar</b> para acelerar.'},
+    {el:'#sel-grade', do:async()=>{ document.getElementById('sel-grade').value='none'; onGradeChange(); },
+     text:'<b>Grau Atual</b>: o grau em que seu item está hoje. Vamos partir do <b>Sem Grau</b>.'},
+    {el:'#sel-target', do:async()=>{ document.getElementById('sel-target').value='a'; onTargetChange(); },
+     text:'<b>Grau Alvo</b>: escolhi <b>Grau A</b> — a calculadora monta a jornada completa: D → C → B → A, etapa por etapa.'},
+    {el:'#sel-refine', do:async()=>{ document.getElementById('sel-refine').value='13'; onRefineChange(); },
+     text:'<b>Refino</b>: quanto maior, melhor a chance de grau. No <b>+13</b> as etapas têm 70/60/50/40%. A partir do <b>+16</b> as chances sobem!'},
+    {el:'#btn-normal',
+     text:'<b>Processo Normal</b>: uma falha <b>destrói o item</b> para sempre. O resultado já mostra quantos itens são consumidos em média na jornada.'},
+    {el:'#inp-bless', do:async()=>{ document.getElementById('inp-bless').value='35'; onBlessChange(); },
+     text:'<b>Bênção de Éter</b>: coloquei 35 — cada etapa converte em bônus de até +10% (o D usa 1 por 1%, o A usa 7).'},
+    {el:'#p-po', do:async()=>{ await typePrice('p-po','3500'); },
+     text:'<b>Preços de mercado</b>: digitei o Pó de Éter a 3.500z. Repare no painel de custo reagindo em tempo real…'},
+    {el:'#gem-rows', do:async()=>{ await typePrice('p-gem-aquamarina','80000'); await typePrice('p-gem-topazio','120000'); await typePrice('p-gem-ametista','250000'); await typePrice('p-gem-ambar','400000'); },
+     text:'…e o preço das <b>gemas de cada etapa</b>. Preencha com os valores do seu servidor para um custo realista.'},
+    {el:'#market-total',
+     text:'Aqui a calculadora soma <b>NPC + mercado</b> e projeta o <b>custo total esperado</b> da jornada, já contando as falhas e repetições.'},
+    {el:'#results',
+     text:'E o <b>resultado</b>: o anel é a chance de chegar ao A <b>sem nenhuma falha</b>; abaixo, a chance de cada etapa, as tentativas esperadas e todos os materiais para separar.'},
+    {text:'Agora é com você! Os valores da demonstração ficaram na tela — ajuste para o seu caso. 💡 Experimente o processo <b>Seguro</b> para comparar os custos.'},
+  ]);
+}
+
+function tourSim(){
+  tourStart([
+    {text:'Vamos ao <b>Simulador de Refino</b>: levar uma arma gradeada do <b>+0 ao +12</b> usando BSB. Só observe — e use <b>⏸</b> se quiser ler com calma.'},
+    {el:'#sim-equip', do:async()=>{ document.getElementById('sim-equip').value='weapon'; onSimConfig(); },
+     text:'<b>Equipamento</b>: Arma Nv.5 usa Eteridecon/Bradium; Armadura Nv.2 usa Eterium/Carnium.'},
+    {el:'#sim-target', do:async()=>{ document.getElementById('sim-start').value='0'; document.getElementById('sim-target').value='12'; onSimConfig(); },
+     text:'<b>Jornada</b>: do +0 ao <b>+12</b>. Até o +3 é 100% garantido — o risco começa no +4.'},
+    {el:'#sim-lowcat', do:async()=>{ document.getElementById('sim-lowcat').value='esp'; onSimConfig(); },
+     text:'<b>Minério +0~+9</b>: escolhi o <b>Enriquecido</b> — mais caro, mas na falha o item cai só 1 refino em vez de 3.'},
+    {el:'#sim-bsb-yes', do:async()=>{ setSimBSB(true); },
+     text:'<b>BSB ativada</b>: do +7 ao +13 o item não cai nem quebra na falha. Sem ela, falhar acima do +9 <b>destrói o item gradeado</b>!'},
+    {el:'#sim-ore-list', do:async()=>{ const i=document.querySelector('#sim-ore-list input'); if(i){ i.value=''; for(const c of '95000'){ i.value=i.value.replace(/\./g,'')+c; i.dispatchEvent(new Event('input')); await tourWait(75); } } },
+     text:'<b>Preços</b>: informe o minério-base (a taxa do NPC já é somada automaticamente). Digitei um exemplo…'},
+    {el:'#sim-bsb-price-row', do:async()=>{ await typePrice('sim-bsbprice','1200000'); },
+     text:'…e o preço da <b>BSB</b>, que costuma ser o item mais pesado do custo.'},
+    {el:'#sim-cost',
+     text:'O <b>custo esperado</b> da jornada inteira aparece aqui: minérios + BSB.'},
+    {el:'#sim-results',
+     text:'E o <b>resultado</b>: tentativas esperadas, minérios por tipo e BSB consumidas. É a média matemática exata (cadeia de Markov), não um sorteio.'},
+    {text:'Fim! Ajuste os campos para o seu caso real. 💡 Compare <b>Comum × Enriquecido</b> e <b>com × sem BSB</b> para achar o caminho mais barato.'},
+  ]);
+}
 
 // ── Refine section ──────────────────────────────────────
 const RS = { tab:'com', event:false };
