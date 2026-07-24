@@ -9,7 +9,7 @@ Calculadora completa para o **Sistema de Grau** e **Refinamento** de Ragnarök O
 
 ## Como usar
 
-**Online:** acesse `https://SEU-USUARIO.github.io/grau-calculator/` (troque `SEU-USUARIO` pelo seu usuário do GitHub após publicar).
+**Online:** acesse `[https://SEU-USUARIO.github.io/grau-calculator/](https://fwksyt.github.io/calculadora_grau/)`
 
 **Local:** basta abrir o arquivo `index.html` em qualquer navegador moderno. Tudo roda localmente no seu navegador.
 
