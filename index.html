@@ -7,413 +7,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <title>Calculadora de Grau — Ragnarök Online</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      /* Identidade FAW: creme = base, roxo do banner = painéis, rosa/ardósia = destaques */
-      --bg:      #f8dfb0;  /* creme — página */
-      --bg2:     #382a4e;  /* roxo do banner — painéis/cards */
-      --bg3:     #2a2039;  /* roxo profundo — insets/inputs/chips */
-      --border:  #4a3b62;  /* borda roxa (interna) */
-      --text:    #f2e7d0;  /* creme — texto sobre roxo */
-      --muted:   #bbb0cb;  /* lavanda clara — texto secundário sobre roxo */
-      --accent:  #ee3a5c;  /* rosa — destaque */
-      --accent2: #ff5b76;  /* rosa claro — valores */
-      --green:   #5cc47e;  /* sucesso */
-      --red:     #f2596b;  /* perigo */
-      --slate:   #8fa1bd;  /* azul-ardósia — secundário */
-      --ink:     #3a2b4f;  /* roxo escuro — texto sobre creme */
-      --ink-soft:#6a5a7e;  /* roxo suave — texto secundário sobre creme */
-    }
-
-    body {
-      zoom: 1.25;
-      background-color: var(--bg);
-      background-image: radial-gradient(rgba(238,58,92,.20) 2px, transparent 2.2px);
-      background-size: 24px 24px;
-      background-attachment: fixed;
-      color: var(--text);
-      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
-    }
-
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    /* layout */
-    .page { display: flex; min-height: 100vh; }
-
-    /* sidebar */
-    .sidebar {
-      width: 190px; min-width: 190px;
-      background: var(--bg2);
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      position: sticky; top: 0; height: 100vh;
-      transition: width .2s;
-    }
-    .sidebar.collapsed { width: 34px; min-width: 34px; overflow: hidden; }
-    .sidebar-toggle {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 11px; cursor: pointer; user-select: none;
-      border-bottom: 1px solid var(--border);
-      font-size: .75em; color: var(--muted); white-space: nowrap;
-    }
-    .sidebar-toggle:hover { color: var(--text); }
-    .sidebar.collapsed .sidebar-toggle { justify-content: center; }
-    .sidebar.collapsed .toggle-label { display: none; }
-    .sidebar-inner { padding: 6px 0; }
-    .sidebar.collapsed .sidebar-inner { display: none; }
-    details.igrp { border-bottom: 1px solid var(--border); }
-    details.igrp summary {
-      padding: 7px 11px; font-size: .7em; text-transform: uppercase;
-      letter-spacing: .8px; color: var(--muted); cursor: pointer;
-      list-style: none; display: flex; justify-content: space-between;
-    }
-    details.igrp summary::-webkit-details-marker { display: none; }
-    details.igrp summary::after { content: '+'; }
-    details.igrp[open] summary::after { content: '−'; }
-    details.igrp summary:hover { color: var(--text); }
-    .llist { padding: 2px 0 6px; margin: 0; }
-    .llist li { list-style: none; }
-    .llist a {
-      display: block; padding: 3px 14px; font-size: .8em;
-      color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .llist a:hover { color: var(--accent2); background: var(--bg3); text-decoration: none; }
-
-    /* main */
-    .main { flex: 1; padding: 18px 22px; min-width: 0; }
-
-    .page-title {
-      font-size: 2.15em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-      color: #e7ebf1;
-      -webkit-text-stroke: 2px var(--accent);
-      paint-order: stroke fill;
-      text-shadow: 3px 3px 0 rgba(43,32,57,.30);
-      margin-bottom: 7px;
-    }
-    .page-sub   { font-size: .8em; color: var(--ink-soft); margin-bottom: 16px; }
-
-    .grade-strip { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
-    .gbadge {
-      padding: 3px 9px; border-radius: 3px; font-size: .78em;
-      border: 1px solid var(--border); background: var(--bg2); color: var(--muted);
-    }
-    .gbadge strong { color: var(--accent2); }
-
-    .section-label {
-      font-size: .74em; text-transform: uppercase; letter-spacing: 1px; font-weight: 800;
-      color: var(--ink); margin-bottom: 8px; margin-top: 0;
-    }
-    .section-label::before {
-      content: ''; display: inline-block; width: 16px; height: 3px;
-      background: var(--accent); margin-right: 8px; vertical-align: middle;
-    }
-
-    .card {
-      background: var(--bg2); border: 1px solid #241a30;
-      border-radius: 8px; padding: 14px; margin-bottom: 10px;
-      box-shadow: 0 3px 10px rgba(43,32,57,.20);
-    }
-
-    /* 3-column top layout */
-    .top-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 14px;
-      align-items: start;
-      margin-bottom: 14px;
-    }
-    @media(max-width:900px){ .top-grid{ grid-template-columns: 1fr 1fr; } }
-    @media(max-width:560px){ .top-grid{ grid-template-columns: 1fr; } }
-
-    .col-label {
-      font-size: .7em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
-      color: var(--ink); margin-bottom: 7px;
-    }
-    .col-label::before {
-      content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 1px;
-      background: var(--accent); margin-right: 6px; vertical-align: middle;
-    }
-
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    @media(max-width:540px){ .form-grid{ grid-template-columns: 1fr; } }
-
-    /* item price cards */
-    .ipc {
-      display: flex; align-items: center; gap: 8px;
-      background: #43345c; border: 1px solid var(--border);
-      border-radius: 6px; padding: 7px 10px; margin-bottom: 6px;
-      transition: border-color .12s;
-    }
-    .ipc:hover { border-color: var(--accent); }
-    .ipc-icon {
-      width: 32px; height: 32px; object-fit: contain;
-      image-rendering: pixelated; flex-shrink: 0; border-radius: 3px;
-    }
-    .ipc-name {
-      flex: 1; font-size: .85em; font-weight: 600; color: var(--text);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
-    }
-    .ipc-input { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-    .ipc-input input {
-      width: 100px; padding: 5px 8px; text-align: right;
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 4px; color: var(--text); font-size: .85em;
-      font-variant-numeric: tabular-nums;
-    }
-    .ipc-input input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(238,58,92,.25); }
-    .price-unit { font-size: .72em; color: var(--muted); flex-shrink: 0; }
-
-    /* collapsible details */
-    details.collapsible { margin-bottom: 10px; }
-    details.collapsible > summary {
-      display: flex; align-items: center; justify-content: space-between;
-      cursor: pointer; list-style: none; padding: 11px 14px;
-      background: var(--bg2); border: 1px solid #241a30; border-radius: 8px;
-      font-size: .7em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text);
-      user-select: none; box-shadow: 0 3px 10px rgba(43,32,57,.20);
-    }
-    details.collapsible > summary::-webkit-details-marker { display: none; }
-    details.collapsible > summary::after { content: '▸ Expandir'; font-size: .9em; }
-    details.collapsible[open] > summary { border-radius: 8px 8px 0 0; border-bottom: none; box-shadow: none; }
-    details.collapsible[open] > summary::after { content: '▾ Recolher'; }
-    details.collapsible > summary:hover { color: var(--text); }
-    details.collapsible > .det-body {
-      background: var(--bg2); border: 1px solid #241a30;
-      border-top: none; border-radius: 0 0 8px 8px; padding: 14px;
-      box-shadow: 0 3px 10px rgba(43,32,57,.20);
-    }
-
-    .fg label {
-      display: block; font-size: .7em; text-transform: uppercase; letter-spacing: .8px;
-      color: var(--muted); margin-bottom: 4px;
-    }
-    select, input[type=number] {
-      width: 100%; padding: 6px 8px;
-      background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
-      color: var(--text); font-size: .9em;
-    }
-    select:focus, input[type=number]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(238,58,92,.25); }
-
-    .toggle-row { display: flex; gap: 5px; }
-    .tbtn {
-      flex: 1; padding: 6px 7px; text-align: center; cursor: pointer;
-      border: 1px solid var(--border); border-radius: 4px;
-      background: var(--bg3); color: var(--muted); font-size: .83em;
-      user-select: none; transition: all .12s;
-    }
-    .tbtn:hover { border-color: #6b5688; color: var(--text); }
-    .tbtn.act-gold  { border-color: var(--accent); color: var(--accent2); background: rgba(238,58,92,.08); }
-    .tbtn.act-green { border-color: var(--green);  color: #5cc47e; background: rgba(63,157,95,.08); }
-    .tbtn.act-red   { border-color: var(--red);    color: #f2596b; background: rgba(207,47,63,.08); }
-
-    .hint { font-size: .73em; color: var(--muted); margin-top: 4px; }
-
-    /* results */
-    .res-top { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 14px; }
-    @media(max-width:480px){ .res-top{ flex-direction: column; } }
-
-    .chance-ring {
-      width: 96px; height: 96px; border-radius: 50%; flex-shrink: 0;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      border: 2px solid var(--border);
-    }
-    .ring-pct { font-size: 1.8em; font-weight: 700; line-height: 1; }
-    .ring-lbl { font-size: .58em; text-transform: uppercase; letter-spacing: 1px; color: var(--slate); margin-top: 1px; }
-    .rg-good   { border-color: var(--green); }
-    .rg-good   .ring-pct { color: #5cc47e; }
-    .rg-mid    { border-color: #d99a3a; }
-    .rg-mid    .ring-pct { color: #e6ad4e; }
-    .rg-bad    { border-color: var(--red); }
-    .rg-bad    .ring-pct { color: #f2596b; }
-
-    .kv-list { flex: 1; }
-    .kv {
-      display: flex; justify-content: space-between; align-items: baseline;
-      padding: 4px 0; border-bottom: 1px solid var(--border); gap: 10px; font-size: .87em;
-    }
-    .kv:last-child { border-bottom: none; }
-    .kv-k { color: var(--muted); }
-    .kv-v { color: var(--text); font-weight: 700; }
-    .v-gold  { color: var(--accent2); }
-    .v-green { color: #5cc47e; }
-    .v-red   { color: #f2596b; }
-
-    hr.div { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
-
-    .sub-lbl {
-      font-size: .7em; text-transform: uppercase; letter-spacing: .8px;
-      color: var(--slate); font-weight: 700; margin: 10px 0 5px;
-    }
-    .mat-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 5px 9px; margin-bottom: 3px;
-      background: var(--bg3); border-radius: 4px; border-left: 2px solid var(--border);
-      font-size: .87em;
-    }
-    .mat-qty { font-weight: 700; color: var(--accent2); }
-
-    .raw-box {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 4px; padding: 9px; margin-top: 4px;
-    }
-    .raw-title { font-size: .68em; text-transform: uppercase; letter-spacing: .8px; color: var(--slate); font-weight: 700; margin-bottom: 5px; }
-
-    .zeny-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 5px 9px; margin-bottom: 3px;
-      background: var(--bg3); border-radius: 4px; font-size: .87em;
-    }
-    .zeny-k { color: var(--muted); }
-    .zeny-v { color: var(--accent2); font-weight: 700; }
-    .zeny-total { border: 1px solid var(--border); background: rgba(238,58,92,.05) !important; }
-    .zeny-total .zeny-k { color: var(--text); }
-    .zeny-total .zeny-v { font-size: 1.08em; }
-
-    .exp-box {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 4px; padding: 11px; margin-top: 11px;
-    }
-    .exp-title { font-size: .68em; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 7px; }
-    .pbar-track { height: 3px; background: var(--border); border-radius: 2px; margin-top: 9px; }
-    .pbar-fill  { height: 100%; border-radius: 2px; background: var(--accent); transition: width .3s; }
-    .exp-note   { font-size: .72em; color: var(--muted); margin-top: 6px; }
-
-    .warn-box {
-      padding: 11px; border-radius: 4px;
-      background: rgba(207,47,63,.1); border: 1px solid var(--red);
-      color: #f2596b; font-size: .88em;
-    }
-
-    /* table */
-    table { width: 100%; border-collapse: collapse; font-size: .83em; }
-    th {
-      background: var(--bg3); color: var(--slate); padding: 6px 8px;
-      font-weight: 600; text-transform: uppercase; letter-spacing: .6px;
-      border-bottom: 1px solid var(--border);
-    }
-    td { padding: 5px 8px; text-align: center; border-bottom: 1px solid var(--border); }
-    tr:last-child td { border-bottom: none; }
-    tr.hl td { background: rgba(238,58,92,.1); color: var(--accent2) !important; font-weight: 700; }
-    .na { color: #4e3f66; }
-
-    /* refine section */
-    .refine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media(max-width:700px){ .refine-grid{ grid-template-columns: 1fr; } }
-    .ore-row {
-      display: flex; justify-content: space-between; align-items: baseline;
-      padding: 5px 9px; margin-bottom: 3px;
-      background: var(--bg3); border-radius: 4px; font-size: .83em; gap: 8px;
-    }
-    .ore-name { color: var(--text); }
-    .ore-range { color: var(--muted); font-size: .85em; white-space: nowrap; }
-    .ore-pen { font-size: .78em; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border); color: var(--muted); }
-    .pen-3r  { border-color: #5f4c25; color: #d99a3a; }
-    .pen-1r  { border-color: #3f4f66; color: #8fa1bd; }
-    .pen-des { border-color: #5f3340; color: #ef6a6a; }
-    .ore-npc { font-size: .78em; color: var(--muted); margin-top: 2px; }
-    .tab-row { display: flex; gap: 5px; margin-bottom: 10px; }
-    .tab-btn {
-      padding: 4px 12px; border-radius: 3px; cursor: pointer;
-      border: 1px solid var(--border); background: var(--bg3);
-      color: var(--muted); font-size: .8em; user-select: none;
-    }
-    .tab-btn:hover { color: var(--text); }
-    .tab-btn.active { border-color: var(--accent); color: var(--accent2); background: rgba(238,58,92,.08); }
-    footer { font-size: .73em; color: var(--ink-soft); text-align: center; padding: 14px; border-top: 1px solid #d8b98a; margin-top: 16px; }
-
-    /* guide modal */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 50;
-      background: rgba(42,32,57,.65);
-      display: none; align-items: flex-start; justify-content: center;
-      padding: 30px 14px;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal {
-      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
-      max-width: 680px; width: 100%; max-height: calc(100vh - 80px);
-      overflow-y: auto; padding: 20px 22px;
-      box-shadow: 0 10px 40px rgba(0,0,0,.45);
-    }
-    .modal-head {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
-    }
-    .modal-title { font-size: 1.15em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2); }
-    .modal-close {
-      cursor: pointer; border: 1px solid var(--border); border-radius: 4px;
-      background: var(--bg3); color: var(--muted); padding: 4px 10px; font-size: .85em; user-select: none;
-    }
-    .modal-close:hover { color: var(--text); border-color: var(--accent); }
-    .guide h3 {
-      font-size: .78em; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2);
-      margin: 16px 0 6px; padding-top: 12px; border-top: 1px solid var(--border);
-    }
-    .guide h3:first-child { margin-top: 0; padding-top: 0; border-top: none; }
-    .guide p { font-size: .87em; color: var(--text); margin-bottom: 7px; }
-    .guide ul { margin: 0 0 8px 18px; }
-    .guide li { font-size: .85em; color: var(--text); margin-bottom: 4px; }
-    .guide b { color: var(--accent2); }
-    .guide .gd-tip {
-      background: var(--bg3); border-left: 3px solid var(--green);
-      border-radius: 4px; padding: 8px 10px; font-size: .84em; margin: 8px 0;
-    }
-    .guide .gd-warn {
-      background: rgba(207,47,63,.1); border-left: 3px solid var(--red);
-      border-radius: 4px; padding: 8px 10px; font-size: .84em; margin: 8px 0; color: #f2b1ba;
-    }
-
-    /* tour guiado */
-    #tour-spot {
-      position: fixed; z-index: 70; pointer-events: none;
-      border: 2px solid var(--accent); border-radius: 8px;
-      box-shadow: 0 0 0 9999px rgba(42,32,57,.55), 0 0 18px rgba(238,58,92,.55);
-      transition: all .45s cubic-bezier(.4,0,.2,1);
-    }
-    #tour-tip {
-      position: fixed; z-index: 71; width: 300px;
-      background: var(--bg2); border: 1px solid var(--accent); border-radius: 8px;
-      padding: 12px 14px; box-shadow: 0 8px 30px rgba(0,0,0,.5);
-      transition: top .45s cubic-bezier(.4,0,.2,1), left .45s cubic-bezier(.4,0,.2,1);
-    }
-    #tour-tip .tt-step { font-size: .68em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-    #tour-tip .tt-text { font-size: .86em; line-height: 1.5; color: var(--text); }
-    #tour-tip .tt-text b { color: var(--accent2); }
-    #tour-tip .tt-btns { display: flex; gap: 6px; margin-top: 10px; }
-    #tour-tip .tt-btn {
-      flex: 1; text-align: center; cursor: pointer; padding: 5px 8px;
-      border: 1px solid var(--border); border-radius: 4px;
-      background: var(--bg3); color: var(--muted); font-size: .78em; user-select: none; white-space: nowrap;
-    }
-    #tour-tip .tt-btn:hover { color: var(--text); border-color: var(--accent); }
-    #tour-tip .tt-btn.primary { border-color: var(--accent); color: var(--accent2); background: rgba(238,58,92,.1); }
-    #tour-tip .tt-bar { height: 2px; background: var(--border); border-radius: 1px; margin-top: 9px; overflow: hidden; }
-    #tour-tip .tt-bar > div { height: 100%; background: var(--accent); width: 0; }
-    @keyframes ttbar { from { width: 0 } to { width: 100% } }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="page">
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
-      <span class="toggle-label">Itens</span>
-      <span>&#8942;</span>
+    <div class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('collapsed')" title="Recolher / expandir menu">
+      <span class="tg-ico"></span>
     </div>
+    <img src="peco.jpg" alt="Peco" class="sidebar-logo" onerror="this.style.display='none'">
+    <div class="byline">By <b>Faw</b></div>
+    <a class="biolink" href="https://fawio.bio.link/" target="_blank">🔗 Todos os meus links</a>
     <div class="sidebar-inner">
 
-      <details class="igrp" open>
-        <summary>Como Usar</summary>
+      <details class="igrp">
+        <summary>Tutorial — Como Usar</summary>
         <ul class="llist">
           <li><a href="#" onclick="tourGrau();return false">▶ Ver na prática — Grau</a></li>
           <li><a href="#" onclick="tourSim();return false">▶ Ver na prática — Refino</a></li>
@@ -421,9 +31,10 @@
         </ul>
       </details>
 
-      <details class="igrp" open>
-        <summary>Materiais de Grau</summary>
+      <details class="igrp">
+        <summary>Itens — Grau &amp; Refino</summary>
         <ul class="llist">
+          <li><span class="lsub">Materiais de Grau</span></li>
           <li><a href="https://www.divine-pride.net/database/item/1000322" target="_blank">Pó de Éter</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000323" target="_blank">Pedra de Éter</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000337" target="_blank">Bênção de Éter</a></li>
@@ -436,23 +47,13 @@
           <li><a href="https://www.divine-pride.net/database/item/1000327" target="_blank">Ametista de Éter</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000321" target="_blank">Âmbar</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000328" target="_blank">Âmbar de Éter</a></li>
-        </ul>
-      </details>
-
-      <details class="igrp">
-        <summary>Minérios Arma Nv.5</summary>
-        <ul class="llist">
+          <li><span class="lsub">Minérios — Arma Nv.5</span></li>
           <li><a href="https://www.divine-pride.net/database/item/1000332" target="_blank">Eteridecon</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000334" target="_blank">Eteridecon Enriquecido</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000336" target="_blank">Eteridecon Perfeito</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000368" target="_blank">Bradium de Éter</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000369" target="_blank">Bradium de Éter Perfeito</a></li>
-        </ul>
-      </details>
-
-      <details class="igrp">
-        <summary>Minérios Armadura Nv.2</summary>
-        <ul class="llist">
+          <li><span class="lsub">Minérios — Armadura Nv.2</span></li>
           <li><a href="https://www.divine-pride.net/database/item/1000331" target="_blank">Eterium</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000333" target="_blank">Eterium Enriquecido</a></li>
           <li><a href="https://www.divine-pride.net/database/item/1000335" target="_blank">Eterium Perfeito</a></li>
@@ -482,8 +83,8 @@
 
       <!-- COL 1: Configuração -->
       <div>
-        <div class="col-label">Configuração</div>
-        <div class="card">
+        <div class="col-label"><span class="stp">1</span> Configuração</div>
+        <div class="card" id="grau-config-card">
           <div class="form-grid">
             <div class="fg">
               <label>Grau Atual</label>
@@ -527,9 +128,10 @@
       </div>
 
       <!-- COL 2: Custo de Mercado -->
-      <div>
-        <div class="col-label">Preços de Mercado <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-soft)">— opcional</span></div>
-        <div class="card">
+      <div class="step-wrap">
+        <div class="step-cover" id="cover-g2"><div class="sc-inner">🔒 <b>Passo 2 — Preços</b><br>Mexa na configuração do passo 1<br>para liberar esta etapa<br><a onclick="unlockStep('g2')">abrir mesmo assim</a></div></div>
+        <div class="col-label"><span class="stp">2</span> Preços de Mercado <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-soft)">— opcional</span></div>
+        <div class="card" id="grau-price-card">
           <div class="hint" style="margin-bottom:10px">Insira os preços do servidor para calcular o custo total.</div>
           <div class="ipc">
             <img class="ipc-icon" src="https://www.divine-pride.net/img/items/collection/iRO/1000322" alt="Pó de Éter" onerror="this.style.visibility='hidden'">
@@ -554,8 +156,9 @@
       </div>
 
       <!-- COL 3: Resultado -->
-      <div>
-        <div class="col-label">Resultado</div>
+      <div class="step-wrap">
+        <div class="step-cover" id="cover-g3"><div class="sc-inner">🔒 <b>Passo 3 — Resultado</b><br>Preencha um preço no passo 2<br>(ou pule direto)<br><a onclick="unlockStep('g3')">pular e ver o resultado</a></div></div>
+        <div class="col-label"><span class="stp">3</span> Resultado</div>
         <div class="card"><div id="results"></div></div>
       </div>
 
@@ -570,8 +173,8 @@
 
       <!-- CONFIG -->
       <div>
-        <div class="col-label">Configuração do Refino</div>
-        <div class="card">
+        <div class="col-label"><span class="stp">1</span> Configuração do Refino</div>
+        <div class="card" id="sim-config-card">
           <div class="form-grid">
             <div class="fg">
               <label>Equipamento</label>
@@ -633,9 +236,10 @@
       </div>
 
       <!-- PREÇOS -->
-      <div>
-        <div class="col-label">Preços <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-soft)">— opcional</span></div>
-        <div class="card">
+      <div class="step-wrap">
+        <div class="step-cover" id="cover-s2"><div class="sc-inner">🔒 <b>Passo 2 — Preços</b><br>Ajuste a configuração do refino<br>para liberar esta etapa<br><a onclick="unlockStep('s2')">abrir mesmo assim</a></div></div>
+        <div class="col-label"><span class="stp">2</span> Preços <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-soft)">— opcional</span></div>
+        <div class="card" id="sim-price-card">
           <div class="hint" id="sim-price-hint" style="margin-bottom:10px"></div>
           <div id="sim-ore-list"></div>
           <div class="ipc" id="sim-po-row">
@@ -657,8 +261,9 @@
       </div>
 
       <!-- RESULTADO -->
-      <div>
-        <div class="col-label">Resultado do Refino</div>
+      <div class="step-wrap">
+        <div class="step-cover" id="cover-s3"><div class="sc-inner">🔒 <b>Passo 3 — Resultado</b><br>Preencha um preço no passo 2<br>(ou pule direto)<br><a onclick="unlockStep('s3')">pular e ver o resultado</a></div></div>
+        <div class="col-label"><span class="stp">3</span> Resultado do Refino</div>
         <div class="card"><div id="sim-results"></div></div>
       </div>
 
@@ -684,10 +289,11 @@
       </div>
     </details>
 
-    <!-- REFINE SECTION -->
-    <div class="section-label" style="margin-top:14px">Refinamento — Arma Nv.5 &amp; Armadura Nv.2 <a href="https://browiki.org/wiki/Refinamento" target="_blank" style="font-size:.85em;letter-spacing:0;text-transform:none">↗ bROWiki</a></div>
-
-    <div class="refine-grid" style="margin-bottom:10px">
+    <!-- REFINE SECTION (colapsada) -->
+    <details class="collapsible" style="margin-top:14px">
+      <summary><span>Refinamento — Minérios (Arma Nv.5 &amp; Armadura Nv.2) <a href="https://browiki.org/wiki/Refinamento" target="_blank" onclick="event.stopPropagation()" style="letter-spacing:0;text-transform:none">↗ bROWiki</a></span></summary>
+      <div class="det-body">
+    <div class="refine-grid">
       <div class="card">
         <div class="sub-lbl" style="margin-top:0">Minérios — Arma Nv.5</div>
         <div class="ore-row"><span><span class="ore-name">Eteridecon</span><span class="ore-range"> +0~+9</span><br><span class="ore-npc">10.000z + 1 Oridecon + 1 Pó de Éter</span></span><span class="ore-pen pen-3r">-3 refinos</span></div>
@@ -707,6 +313,8 @@
         <div class="hint" style="margin-top:6px">Limite seguro (100%): até +3.</div>
       </div>
     </div>
+      </div>
+    </details>
 
     <!-- Tabela de chances de Refino (colapsada) -->
     <details class="collapsible">
@@ -737,6 +345,11 @@
       Dados de <a href="https://browiki.org/wiki/Grau" target="_blank">bROWiki</a> e <a href="https://www.divine-pride.net/" target="_blank">Divine Pride</a>.
     </footer>
   </div>
+
+  <!-- Peco no canto superior direito — aparece quando o menu está recolhido; clique para reabrir -->
+  <img src="peco.jpg" alt="Peco — abrir menu" title="Abrir menu" class="peco-mini"
+       onclick="document.getElementById('sidebar').classList.remove('collapsed')"
+       onerror="this.style.display='none'">
 </div>
 
 <!-- GUIA DE USO -->
@@ -762,738 +375,28 @@
   </div>
 </div>
 
-<script>
-const GRADES = {
-  none_to_d: {
-    label:'Nenhum → Grau D', material:'Aquamarina de Éter',
-    qN:1, qS:5, fN:100000, fS:500000, bPer:1, minR:9,
-    ch:{ 9:[10,20],10:[20,30],11:[70,80],12:[70,80],13:[70,80],14:[70,80],15:[70,80],16:[80,90],17:[80,90],18:[80,90],19:[80,90],20:[80,90] }
-  },
-  d_to_c: {
-    label:'Grau D → Grau C', material:'Topázio de Éter',
-    qN:1, qS:5, fN:125000, fS:625000, bPer:3, minR:10,
-    ch:{ 10:[20,30],11:[60,70],12:[60,70],13:[60,70],14:[60,70],15:[60,70],16:[70,80],17:[70,80],18:[70,80],19:[70,80],20:[70,80] }
-  },
-  c_to_b: {
-    label:'Grau C → Grau B', material:'Ametista de Éter',
-    qN:1, qS:5, fN:200000, fS:1000000, bPer:5, minR:11,
-    ch:{ 11:[50,60],12:[50,60],13:[50,60],14:[50,60],15:[50,60],16:[60,70],17:[60,70],18:[60,70],19:[60,70],20:[60,70] }
-  },
-  b_to_a: {
-    label:'Grau B → Grau A', material:'Âmbar de Éter',
-    qN:2, qS:10, fN:500000, fS:2500000, bPer:7, minR:11,
-    ch:{ 11:[40,50],12:[40,50],13:[40,50],14:[40,50],15:[40,50],16:[50,60],17:[50,60],18:[50,60],19:[50,60],20:[50,60] }
-  }
-};
-const CRAFT = {
-  'Aquamarina de Éter':{ npc:100000, pedra:3,  gem:'Aquamarina', gemId:720      },
-  'Topázio de Éter':   { npc:200000, pedra:6,  gem:'Topázio',    gemId:728      },
-  'Ametista de Éter':  { npc:300000, pedra:10, gem:'Ametista',   gemId:719      },
-  'Âmbar de Éter':     { npc:500000, pedra:15, gem:'Âmbar',      gemId:1000321  },
-};
-const GK = { none:'none_to_d', d:'d_to_c', c:'c_to_b', b:'b_to_a' };
-const NG = { none:'d', d:'c', c:'b', b:'a' };
-const GL = { none:'Sem Grau', d:'Grau D', c:'Grau C', b:'Grau B', a:'Grau A' };
-const S  = { grade:'none', target:'d', refine:11, process:'normal', event:false, bless:0 };
-const D  = () => GRADES[GK[S.grade]];
-
-// cadeia de transições do grau atual até o alvo
-function chainKeys(){ const l=[]; let g=S.grade; while(g!==S.target){ l.push(GK[g]); g=NG[g]; } return l; }
-function chainMinR(){ return Math.max(...chainKeys().map(k=>GRADES[k].minR)); }
-
-function zf(n) {
-  if (n >= 1000000) return (n/1000000).toFixed(n%1000000===0?0:1).replace('.',',')+'kk z';
-  return (n/1000).toFixed(0)+'k z';
-}
-
-function setProcess(p) {
-  S.process = p;
-  document.getElementById('btn-normal').className = 'tbtn'+(p==='normal'?' act-red':'');
-  document.getElementById('btn-safe').className   = 'tbtn'+(p==='safe'?' act-green':'');
-  document.getElementById('process-hint').innerHTML = p==='normal'
-    ? 'Falha = item <b style="color:#f2596b">destruído permanentemente</b>. Usa 1 minério.'
-    : 'Falha = item <b style="color:#5cc47e">preservado</b>. Usa 5× (ou 10×) mais minério.';
-  calc();
-}
-
-function setEvent(e) {
-  S.event = e;
-  document.getElementById('btn-no-event').className  = 'tbtn'+(!e?' act-gold':'');
-  document.getElementById('btn-yes-event').className = 'tbtn'+(e?' act-gold':'');
-  document.getElementById('tbl-lbl').textContent = e ? '— Evento Ativo' : '— Sem Evento';
-  buildTable(); calc();
-}
-
-function onGradeChange() {
-  S.grade = document.getElementById('sel-grade').value;
-  const st = document.getElementById('sel-target'), prevT = S.target;
-  st.innerHTML = '';
-  const opts = []; let g = NG[S.grade];
-  while (true) { opts.push(g); if (g === 'a') break; g = NG[g]; }
-  opts.forEach(o => {
-    const el = document.createElement('option');
-    el.value = o; el.textContent = GL[o];
-    st.appendChild(el);
-  });
-  st.value = opts.includes(prevT) ? prevT : opts[0];
-  onTargetChange();
-}
-
-function onTargetChange() {
-  S.target = document.getElementById('sel-target').value;
-  const minR = chainMinR();
-  const sr = document.getElementById('sel-refine');
-  const prev = parseInt(sr.value) || minR;
-  sr.innerHTML = '';
-  for (let r=minR;r<=20;r++){
-    const o=document.createElement('option');
-    o.value=r; o.textContent='+'+r;
-    if(r===Math.max(prev,minR)) o.selected=true;
-    sr.appendChild(o);
-  }
-  S.refine=parseInt(sr.value);
-  const chain = chainKeys();
-  const maxB = Math.max(...chain.map(k=>GRADES[k].bPer))*10;
-  if (S.bless > maxB) { S.bless = maxB; document.getElementById('inp-bless').value = maxB; }
-  document.getElementById('hint-bless').innerHTML = chain.length === 1
-    ? `+1% a cada <b>${GRADES[chain[0]].bPer}</b> bênção(s) · Máx: +10% (${GRADES[chain[0]].bPer*10} bênçãos)`
-    : chain.map(k=>`→${k.slice(-1).toUpperCase()}: 1%/<b>${GRADES[k].bPer}</b>`).join(' · ') + ' bênçãos · Máx +10% por etapa';
-  buildMarketRows();
-  buildTable(); calc();
-}
-
-// linhas de preço de gema — uma por etapa da jornada
-const mktCache = {};
-function cacheMktPrice(name, el){ mktCache[name] = el.value; }
-function buildMarketRows(){
-  document.querySelectorAll('#gem-rows input').forEach(el=>{ if(el.dataset.name) mktCache[el.dataset.name]=el.value; });
-  document.getElementById('gem-rows').innerHTML = chainKeys().map(k=>{
-    const mat = CRAFT[GRADES[k].material];
-    const val = mktCache[mat.gem] ? ` value="${mktCache[mat.gem]}"` : '';
-    return `<div class="ipc">`
-      + `<img class="ipc-icon" src="https://www.divine-pride.net/img/items/collection/iRO/${mat.gemId}" alt="${mat.gem}" onerror="this.style.visibility='hidden'">`
-      + `<span class="ipc-name">${mat.gem}</span>`
-      + `<div class="ipc-input"><input type="text" id="p-gem-${slug(mat.gem)}" data-name="${mat.gem}"${val}`
-      + ` oninput="formatPrice(this);cacheMktPrice(this.dataset.name,this);calc()" placeholder="0" autocomplete="off">`
-      + `<span class="price-unit">z</span></div></div>`;
-  }).join('');
-}
-
-function onRefineChange() {
-  S.refine=parseInt(document.getElementById('sel-refine').value);
-  buildTable(); calc();
-}
-
-function onBlessChange() {
-  const max=Math.max(...chainKeys().map(k=>GRADES[k].bPer))*10;
-  let v=parseInt(document.getElementById('inp-bless').value)||0;
-  if(v<0)v=0; if(v>max){v=max;document.getElementById('inp-bless').value=max;}
-  S.bless=v; calc();
-}
-
-function gv(id) {
-  const raw = document.getElementById(id).value.replace(/\./g,'').replace(/\D/g,'');
-  return raw === '' ? 0 : parseInt(raw, 10);
-}
-
-function formatPrice(input) {
-  const raw = input.value.replace(/\./g,'').replace(/\D/g,'');
-  if (!raw) { input.value = ''; return; }
-  const n = parseInt(raw, 10);
-  input.value = n.toLocaleString('pt-BR');
-}
-
-function calc() {
-  const ei=S.event?1:0, div=document.getElementById('results');
-  const chain=chainKeys(), n=chain.length, isSafe=S.process==='safe';
-  const pPo=gv('p-po'), pFerr=gv('p-ferr');
-  document.getElementById('pr-ferr-row').style.display = S.bless>0 ? 'flex' : 'none';
-
-  // dados de cada etapa da jornada
-  const steps=[];
-  for(const k of chain){
-    const d=GRADES[k], ca=d.ch[S.refine];
-    if(!ca){
-      div.innerHTML=`<div class="warn-box">Refino +${S.refine} inválido para esta jornada. Mínimo: <b>+${chainMinR()}</b></div>`;
-      document.getElementById('market-total').innerHTML='';
-      return;
-    }
-    const base=ca[ei], bonus=Math.min(10,Math.floor(S.bless/d.bPer)), total=Math.min(100,base+bonus);
-    const qty=isSafe?d.qS:d.qN, fee=isSafe?d.fS:d.fN;
-    const mat=CRAFT[d.material];
-    const po=(mat.pedra*qty)*5 + S.bless*5;
-    const npc=fee+(mat.npc+mat.pedra*100000)*qty+S.bless*100000;
-    const pGem=gv('p-gem-'+slug(mat.gem));
-    steps.push({d,base,bonus,total,p:total/100,qty,mat,po,npc,market:po*pPo+qty*pGem+S.bless*pFerr,hasGem:pGem>0});
-  }
-
-  // tentativas esperadas por etapa:
-  //  seguro: 1/p (item preservado, etapas independentes)
-  //  normal: falha destrói o item e a jornada recomeça — V_i = 1/(p_i*p_{i+1}*...*p_n)
-  const V=new Array(n);
-  if(isSafe){ for(let i=0;i<n;i++) V[i]=steps[i].p>0?1/steps[i].p:Infinity; }
-  else{ let acc=1; for(let i=n-1;i>=0;i--){ acc*=steps[i].p; V[i]=acc>0?1/acc:Infinity; } }
-  const finite=V.every(isFinite);
-  const attempts=V.reduce((a,v)=>a+v,0);
-  const expNPC=steps.reduce((a,s,i)=>a+V[i]*s.npc,0);
-  const expMkt=steps.reduce((a,s,i)=>a+V[i]*s.market,0);
-  const hasMarket=pPo>0||pFerr>0||steps.some(s=>s.hasGem);
-  const direct=Math.round(steps.reduce((a,s)=>a*s.p,1)*100);
-  const itemsUsed=isSafe?1:steps.reduce((a,s,i)=>a+V[i]*(1-s.p),0)+1;
-  const first=steps[0];
-  const fmt=v=>finite?zf(Math.round(v)):'∞';
-  const fcnt=v=>finite?Math.ceil(v).toLocaleString('pt-BR'):'∞';
-
-  // ── market total panel (col 2) ──
-  const mt=document.getElementById('market-total');
-  if(n===1){
-    mt.innerHTML=`
-    <div class="sub-lbl" style="margin-top:0;margin-bottom:6px">Por tentativa</div>
-    <div class="zeny-row"><span class="zeny-k">NPC (taxas + craft)</span><span class="zeny-v">${zf(first.npc)}</span></div>
-    <div class="zeny-row"><span class="zeny-k">Mercado (gemas + pó${S.bless>0?' + bênçãos':''})</span><span class="zeny-v">${hasMarket?zf(first.market):'—'}</span></div>
-    <div class="zeny-row zeny-total"><span class="zeny-k">Total / tentativa</span><span class="zeny-v">${zf(first.npc+(hasMarket?first.market:0))}</span></div>
-    ${finite?`
-    <div class="sub-lbl" style="margin-top:10px;margin-bottom:6px">Esperado (~${V[0].toFixed(1)} tentativas)</div>
-    <div class="zeny-row"><span class="zeny-k">NPC esperado</span><span class="zeny-v">${fmt(expNPC)}</span></div>
-    ${hasMarket?`<div class="zeny-row"><span class="zeny-k">Mercado esperado</span><span class="zeny-v">${fmt(expMkt)}</span></div>`:''}
-    <div class="zeny-row zeny-total"><span class="zeny-k">TOTAL esperado</span><span class="zeny-v v-gold">${fmt(expNPC+(hasMarket?expMkt:0))}</span></div>
-    `:''}
-    ${!hasMarket?`<div class="hint" style="margin-top:6px">Insira preços de mercado acima para ver o custo total real.</div>`:''}`;
-  } else {
-    mt.innerHTML=`
-    <div class="sub-lbl" style="margin-top:0;margin-bottom:6px">Custo esperado por etapa</div>
-    ${steps.map((s,i)=>`<div class="zeny-row"><span class="zeny-k">${s.d.label}</span><span class="zeny-v">${fmt(V[i]*(s.npc+s.market))}</span></div>`).join('')}
-    <div class="sub-lbl" style="margin-top:10px;margin-bottom:6px">Jornada completa (~${finite?attempts.toFixed(1):'∞'} tentativas)</div>
-    <div class="zeny-row"><span class="zeny-k">NPC esperado</span><span class="zeny-v">${fmt(expNPC)}</span></div>
-    ${hasMarket?`<div class="zeny-row"><span class="zeny-k">Mercado esperado</span><span class="zeny-v">${fmt(expMkt)}</span></div>`:''}
-    <div class="zeny-row zeny-total"><span class="zeny-k">TOTAL esperado</span><span class="zeny-v v-gold">${fmt(expNPC+(hasMarket?expMkt:0))}</span></div>
-    ${!hasMarket?`<div class="hint" style="margin-top:6px">Insira preços de mercado acima para ver o custo total real.</div>`:''}`;
-  }
-
-  // ── results panel (col 3) ──
-  if(n===1){
-    const rc=first.total>=60?'rg-good':first.total>=35?'rg-mid':'rg-bad';
-    div.innerHTML=`
-    <div class="res-top">
-      <div class="chance-ring ${rc}">
-        <div class="ring-pct">${first.total}%</div>
-        <div class="ring-lbl">Sucesso</div>
-      </div>
-      <div class="kv-list">
-        <div class="kv"><span class="kv-k">Transição</span><span class="kv-v">${first.d.label}</span></div>
-        <div class="kv"><span class="kv-k">Refino</span><span class="kv-v">+${S.refine}</span></div>
-        <div class="kv"><span class="kv-k">Chance base</span><span class="kv-v">${first.base}%</span></div>
-        <div class="kv"><span class="kv-k">Bônus bênçãos</span><span class="kv-v v-green">+${first.bonus}%</span></div>
-        <div class="kv"><span class="kv-k">Chance total</span><span class="kv-v v-gold">${first.total}%</span></div>
-        <div class="kv"><span class="kv-k">Em caso de falha</span><span class="kv-v ${isSafe?'v-green':'v-red'}">${isSafe?'Item preservado':'Item DESTRUÍDO'}</span></div>
-        <div class="kv"><span class="kv-k">Tentativas esperadas</span><span class="kv-v">${finite?'~'+V[0].toFixed(2):'∞'}</span></div>
-      </div>
+<!-- WIDGET DE BOAS-VINDAS (primeira visita) -->
+<div class="welcome-overlay" id="welcome">
+  <div class="welcome-card">
+    <div class="w-emoji">👋</div>
+    <h2>Bem-vindo à Calculadora de Grau!</h2>
+    <p>Primeira vez por aqui? Veja a calculadora <b>se preenchendo sozinha</b>, passo a passo, com um exemplo real de Sem Grau até o Grau A.</p>
+    <div class="w-btns">
+      <div class="w-btn primary" onclick="welcomeTour()">▶ Ver passo a passo</div>
+      <div class="w-btn" onclick="dismissWelcome()">Explorar sozinho</div>
     </div>
-    <hr class="div">
-    <div class="sub-lbl">Materiais por tentativa — ${isSafe?'Seguro':'Normal'}</div>
-    <div class="mat-row"><span>${first.d.material}</span><span class="mat-qty">× ${first.qty}</span></div>
-    ${S.bless>0?`<div class="mat-row"><span>Bênção de Éter</span><span class="mat-qty">× ${S.bless}</span></div>`:''}
-    <div class="raw-box">
-      <div class="raw-title">Materiais brutos</div>
-      <div class="mat-row"><span>Pó de Éter</span><span class="mat-qty">× ${first.po}</span></div>
-      <div class="mat-row"><span>${first.mat.gem} <span style="color:var(--muted);font-size:.85em">(mercado)</span></span><span class="mat-qty">× ${first.qty}</span></div>
-      ${S.bless>0?`<div class="mat-row"><span>Bênção de Éter</span><span class="mat-qty">× ${S.bless}</span></div>`:''}
-    </div>
-    <div class="pbar-track" style="margin-top:10px"><div class="pbar-fill" style="width:${first.total}%"></div></div>
-    <div class="exp-note" style="margin-top:6px">${isSafe
-      ?'Processo seguro: item nunca é destruído.'
-      :'⚠ Processo normal: item destruído em falha.'
-    }</div>`;
-  } else {
-    const rc=direct>=60?'rg-good':direct>=35?'rg-mid':'rg-bad';
-    div.innerHTML=`
-    <div class="res-top">
-      <div class="chance-ring ${rc}">
-        <div class="ring-pct" style="font-size:1.5em">${direct}%</div>
-        <div class="ring-lbl">sem falhar</div>
-      </div>
-      <div class="kv-list">
-        <div class="kv"><span class="kv-k">Jornada</span><span class="kv-v">${GL[S.grade]} → ${GL[S.target]}</span></div>
-        <div class="kv"><span class="kv-k">Refino</span><span class="kv-v">+${S.refine}</span></div>
-        ${steps.map(s=>`<div class="kv"><span class="kv-k">${s.d.label}</span><span class="kv-v">${s.total}%${s.bonus>0?` <span class="v-green">(+${s.bonus}%)</span>`:''}</span></div>`).join('')}
-        <div class="kv"><span class="kv-k">Tentativas esperadas</span><span class="kv-v v-gold">${finite?'~'+attempts.toFixed(1):'∞'}</span></div>
-        <div class="kv"><span class="kv-k">Em caso de falha</span><span class="kv-v ${isSafe?'v-green':'v-red'}">${isSafe?'Item preservado':'Item DESTRUÍDO'}</span></div>
-        ${!isSafe&&finite?`<div class="kv"><span class="kv-k">Itens gastos (média)</span><span class="kv-v v-red">~${itemsUsed.toFixed(2)}</span></div>`:''}
-      </div>
-    </div>
-    <hr class="div">
-    <div class="sub-lbl">Materiais esperados — jornada completa (${isSafe?'Seguro':'Normal'})</div>
-    ${steps.map((s,i)=>`<div class="mat-row"><span>${s.d.material}</span><span class="mat-qty">× ${fcnt(V[i]*s.qty)}</span></div>`).join('')}
-    ${S.bless>0?`<div class="mat-row"><span>Bênção de Éter</span><span class="mat-qty">× ${fcnt(S.bless*attempts)}</span></div>`:''}
-    <div class="raw-box">
-      <div class="raw-title">Materiais brutos esperados</div>
-      <div class="mat-row"><span>Pó de Éter</span><span class="mat-qty">× ${fcnt(steps.reduce((a,s,i)=>a+V[i]*s.po,0))}</span></div>
-      ${steps.map((s,i)=>`<div class="mat-row"><span>${s.mat.gem} <span style="color:var(--muted);font-size:.85em">(mercado)</span></span><span class="mat-qty">× ${fcnt(V[i]*s.qty)}</span></div>`).join('')}
-    </div>
-    <div class="pbar-track" style="margin-top:10px"><div class="pbar-fill" style="width:${direct}%"></div></div>
-    <div class="exp-note" style="margin-top:6px">${isSafe
-      ?'Processo seguro: o item nunca é destruído — o esperado soma as etapas de forma independente.'
-      :'⚠ Processo normal: falha em QUALQUER etapa destrói o item e a jornada recomeça do zero — o cálculo já inclui refazer as etapas anteriores.'
-    }</div>`;
-  }
-}
+    <div class="w-hint">Você pode rever quando quiser em <b>Como Usar</b> (menu lateral) ou no botão <b>?</b> no canto da tela.</div>
+  </div>
+</div>
 
-function buildTable() {
-  const ei=S.event?1:0, tb=document.getElementById('chances-body');
-  tb.innerHTML='';
-  for(let r=9;r<=20;r++){
-    const nd=GRADES.none_to_d.ch[r], dc=GRADES.d_to_c.ch[r],
-          cb=GRADES.c_to_b.ch[r],   ba=GRADES.b_to_a.ch[r];
-    const hl=r===S.refine;
-    const tr=document.createElement('tr');
-    if(hl) tr.className='hl';
-    const c=a=>a?`<td>${a[ei]}%</td>`:`<td class="na">—</td>`;
-    tr.innerHTML=`<td>+${r}</td>${c(nd)}${c(dc)}${c(cb)}${c(ba)}`;
-    tb.appendChild(tr);
-  }
-}
+<!-- BOTÃO FLUTUANTE DE AJUDA -->
+<div class="help-fab" id="help-fab" onclick="toggleHelpMenu()" title="Como usar">?</div>
+<div class="help-menu" id="help-menu">
+  <a onclick="toggleHelpMenu();tourGrau()">▶ Ver na prática — Grau</a>
+  <a onclick="toggleHelpMenu();tourSim()">▶ Ver na prática — Refino</a>
+  <a onclick="toggleHelpMenu();openGuide('gd-dicas')">💡 Dicas rápidas</a>
+</div>
 
-function init(){
-  onGradeChange();
-  setProcess('normal');
-  setEvent(false);
-}
-init();
-
-// ── dicas (modal) ──
-function openGuide(sec){
-  document.getElementById('guide-overlay').classList.add('open');
-  const el=document.getElementById(sec);
-  if(el && el.scrollIntoView) el.scrollIntoView({block:'start'});
-}
-function closeGuide(){ document.getElementById('guide-overlay').classList.remove('open'); }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeGuide(); tourStop(); } });
-
-// ── tour guiado "ver na prática" ─────────────────────────
-const TOUR = { steps:null, i:-1, timer:null, dur:0, paused:false, active:false };
-const tourWait = ms => new Promise(r=>setTimeout(r,ms));
-function tourZ(){ return parseFloat(getComputedStyle(document.body).zoom)||1; }
-
-// digita um preço dígito a dígito, disparando o oninput real do campo
-async function typePrice(id, digits){
-  const el=document.getElementById(id); if(!el) return;
-  el.value='';
-  for(const ch of digits){
-    el.value=el.value.replace(/\./g,'')+ch;
-    el.dispatchEvent(new Event('input'));
-    await tourWait(75);
-  }
-}
-
-function tourStart(steps){
-  tourStop(); closeGuide();
-  if(!document.getElementById('tour-spot')){
-    const s=document.createElement('div'); s.id='tour-spot'; document.body.appendChild(s);
-    const t=document.createElement('div'); t.id='tour-tip'; document.body.appendChild(t);
-  }
-  TOUR.steps=steps; TOUR.i=-1; TOUR.active=true; TOUR.paused=false;
-  tourNext();
-}
-
-async function tourRun(){
-  const st=TOUR.steps[TOUR.i];
-  if(st.do){ try{ await st.do(); }catch(e){} }
-  await tourWait(60);
-  const el=st.el?document.querySelector(st.el):null;
-  if(el && el.scrollIntoView){ el.scrollIntoView({behavior:'smooth',block:'center'}); await tourWait(430); }
-  if(!TOUR.active) return;
-  const tip=document.getElementById('tour-tip');
-  TOUR.dur = st.ms || Math.max(3400, 2200 + st.text.length*32);
-  tip.innerHTML=`<div class="tt-step">Passo ${TOUR.i+1} de ${TOUR.steps.length}</div>
-    <div class="tt-text">${st.text}</div>
-    <div class="tt-btns">
-      <div class="tt-btn" onclick="tourStop()">✕ Sair</div>
-      <div class="tt-btn" id="tt-pause" onclick="tourPause()">⏸ Pausar</div>
-      <div class="tt-btn primary" onclick="tourNext()">Avançar ▸</div>
-    </div>
-    <div class="tt-bar"><div id="tt-bar" style="animation:ttbar ${TOUR.dur}ms linear forwards"></div></div>`;
-  tourPos();
-  clearTimeout(TOUR.timer);
-  if(!TOUR.paused) TOUR.timer=setTimeout(tourNext, TOUR.dur);
-}
-
-function tourPos(){
-  if(!TOUR.active || TOUR.i<0) return;
-  const st=TOUR.steps[TOUR.i];
-  const spot=document.getElementById('tour-spot'), tip=document.getElementById('tour-tip');
-  if(!spot||!tip) return;
-  const Z=tourZ(), vw=window.innerWidth/Z, vh=window.innerHeight/Z;
-  const el=st.el?document.querySelector(st.el):null;
-  if(el){
-    const r=el.getBoundingClientRect();
-    spot.style.display='block';
-    spot.style.left=(r.left/Z-6)+'px'; spot.style.top=(r.top/Z-6)+'px';
-    spot.style.width=(r.width/Z+12)+'px'; spot.style.height=(r.height/Z+12)+'px';
-  } else spot.style.display='none';
-  const tw=tip.offsetWidth, th=tip.offsetHeight;
-  let tl, tt;
-  if(el){
-    const r=el.getBoundingClientRect(), rl=r.left/Z, rt=r.top/Z, rh=r.height/Z;
-    tl=Math.min(Math.max(10,rl), vw-tw-10);
-    tt=rt+rh+16;
-    if(tt+th>vh-10) tt=rt-th-16;
-    if(tt<10) tt=10;
-  } else { tl=(vw-tw)/2; tt=(vh-th)/2; }
-  tip.style.left=tl+'px'; tip.style.top=tt+'px';
-}
-window.addEventListener('resize', tourPos);
-window.addEventListener('scroll', tourPos, true);
-
-function tourNext(){
-  if(!TOUR.active) return;
-  clearTimeout(TOUR.timer);
-  TOUR.i++;
-  if(TOUR.i>=TOUR.steps.length){ tourStop(); return; }
-  tourRun();
-}
-
-function tourPause(){
-  if(!TOUR.active) return;
-  TOUR.paused=!TOUR.paused;
-  const b=document.getElementById('tt-pause'), bar=document.getElementById('tt-bar');
-  if(b) b.textContent=TOUR.paused?'▶ Continuar':'⏸ Pausar';
-  if(bar) bar.style.animationPlayState=TOUR.paused?'paused':'running';
-  clearTimeout(TOUR.timer);
-  if(!TOUR.paused) TOUR.timer=setTimeout(tourNext, Math.max(2000, TOUR.dur/2));
-}
-
-function tourStop(){
-  if(!TOUR.active && !document.getElementById('tour-spot')) return;
-  TOUR.active=false; clearTimeout(TOUR.timer);
-  const s=document.getElementById('tour-spot'), t=document.getElementById('tour-tip');
-  if(s) s.remove(); if(t) t.remove();
-}
-
-function tourGrau(){
-  tourStart([
-    {text:'Bem-vindo! Vou simular um cálculo real: <b>Sem Grau → Grau A</b> no <b>+13</b>. Os campos vão se preencher sozinhos — só observe. Use <b>⏸</b> para ler com calma ou <b>Avançar</b> para acelerar.'},
-    {el:'#sel-grade', do:async()=>{ document.getElementById('sel-grade').value='none'; onGradeChange(); },
-     text:'<b>Grau Atual</b>: o grau em que seu item está hoje. Vamos partir do <b>Sem Grau</b>.'},
-    {el:'#sel-target', do:async()=>{ document.getElementById('sel-target').value='a'; onTargetChange(); },
-     text:'<b>Grau Alvo</b>: escolhi <b>Grau A</b> — a calculadora monta a jornada completa: D → C → B → A, etapa por etapa.'},
-    {el:'#sel-refine', do:async()=>{ document.getElementById('sel-refine').value='13'; onRefineChange(); },
-     text:'<b>Refino</b>: quanto maior, melhor a chance de grau. No <b>+13</b> as etapas têm 70/60/50/40%. A partir do <b>+16</b> as chances sobem!'},
-    {el:'#btn-normal',
-     text:'<b>Processo Normal</b>: uma falha <b>destrói o item</b> para sempre. O resultado já mostra quantos itens são consumidos em média na jornada.'},
-    {el:'#inp-bless', do:async()=>{ document.getElementById('inp-bless').value='35'; onBlessChange(); },
-     text:'<b>Bênção de Éter</b>: coloquei 35 — cada etapa converte em bônus de até +10% (o D usa 1 por 1%, o A usa 7).'},
-    {el:'#p-po', do:async()=>{ await typePrice('p-po','3500'); },
-     text:'<b>Preços de mercado</b>: digitei o Pó de Éter a 3.500z. Repare no painel de custo reagindo em tempo real…'},
-    {el:'#gem-rows', do:async()=>{ await typePrice('p-gem-aquamarina','80000'); await typePrice('p-gem-topazio','120000'); await typePrice('p-gem-ametista','250000'); await typePrice('p-gem-ambar','400000'); },
-     text:'…e o preço das <b>gemas de cada etapa</b>. Preencha com os valores do seu servidor para um custo realista.'},
-    {el:'#market-total',
-     text:'Aqui a calculadora soma <b>NPC + mercado</b> e projeta o <b>custo total esperado</b> da jornada, já contando as falhas e repetições.'},
-    {el:'#results',
-     text:'E o <b>resultado</b>: o anel é a chance de chegar ao A <b>sem nenhuma falha</b>; abaixo, a chance de cada etapa, as tentativas esperadas e todos os materiais para separar.'},
-    {text:'Agora é com você! Os valores da demonstração ficaram na tela — ajuste para o seu caso. 💡 Experimente o processo <b>Seguro</b> para comparar os custos.'},
-  ]);
-}
-
-function tourSim(){
-  tourStart([
-    {text:'Vamos ao <b>Simulador de Refino</b>: levar uma arma gradeada do <b>+0 ao +12</b> usando BSB. Só observe — e use <b>⏸</b> se quiser ler com calma.'},
-    {el:'#sim-equip', do:async()=>{ document.getElementById('sim-equip').value='weapon'; onSimConfig(); },
-     text:'<b>Equipamento</b>: Arma Nv.5 usa Eteridecon/Bradium; Armadura Nv.2 usa Eterium/Carnium.'},
-    {el:'#sim-target', do:async()=>{ document.getElementById('sim-start').value='0'; document.getElementById('sim-target').value='12'; onSimConfig(); },
-     text:'<b>Jornada</b>: do +0 ao <b>+12</b>. Até o +3 é 100% garantido — o risco começa no +4.'},
-    {el:'#sim-lowcat', do:async()=>{ document.getElementById('sim-lowcat').value='esp'; onSimConfig(); },
-     text:'<b>Minério +0~+9</b>: escolhi o <b>Enriquecido</b> — mais caro, mas na falha o item cai só 1 refino em vez de 3.'},
-    {el:'#sim-bsb-yes', do:async()=>{ setSimBSB(true); },
-     text:'<b>BSB ativada</b>: do +7 ao +13 o item não cai nem quebra na falha. Sem ela, falhar acima do +9 <b>destrói o item gradeado</b>!'},
-    {el:'#sim-ore-list', do:async()=>{ const i=document.querySelector('#sim-ore-list input'); if(i){ i.value=''; for(const c of '95000'){ i.value=i.value.replace(/\./g,'')+c; i.dispatchEvent(new Event('input')); await tourWait(75); } } },
-     text:'<b>Preços</b>: informe o minério-base (a taxa do NPC já é somada automaticamente). Digitei um exemplo…'},
-    {el:'#sim-bsb-price-row', do:async()=>{ await typePrice('sim-bsbprice','1200000'); },
-     text:'…e o preço da <b>BSB</b>, que costuma ser o item mais pesado do custo.'},
-    {el:'#sim-cost',
-     text:'O <b>custo esperado</b> da jornada inteira aparece aqui: minérios + BSB.'},
-    {el:'#sim-results',
-     text:'E o <b>resultado</b>: tentativas esperadas, minérios por tipo e BSB consumidas. É a média matemática exata (cadeia de Markov), não um sorteio.'},
-    {text:'Fim! Ajuste os campos para o seu caso real. 💡 Compare <b>Comum × Enriquecido</b> e <b>com × sem BSB</b> para achar o caminho mais barato.'},
-  ]);
-}
-
-// ── Refine section ──────────────────────────────────────
-const RS = { tab:'com', event:false };
-
-// [noEvent%, event%]
-const REFINE_COM = {
-  // common ores, Arma Nv.5 = Armadura Nv.2 (same values)
-  1:[100,100],2:[100,100],3:[100,100],
-  4:[60,80],5:[60,80],6:[40,60],7:[40,60],8:[20,40],9:[20,40],
-  10:[9,18],11:[8,16],12:[8,16],13:[8,16],14:[8,16],
-  15:[7,14],16:[7,14],17:[7,14],18:[7,14],19:[5,10],20:[5,10]
-};
-const REFINE_ESP = {
-  // special ores, Arma Nv.5 = Armadura Nv.2
-  1:[100,100],2:[100,100],3:[100,100],
-  4:[90,95],5:[70,85],6:[60,70],7:[60,65],8:[40,55],9:[40,45],
-  10:[25,25],11:[20,20],12:[20,20],13:[20,20],14:[20,20],
-  15:[15,15],16:[15,15],17:[15,15],18:[15,15],19:[10,10],20:[10,10]
-};
-
-function setRefineTab(t) {
-  RS.tab = t;
-  document.getElementById('r-tab-com').className = 'tab-btn'+(t==='com'?' active':'');
-  document.getElementById('r-tab-esp').className = 'tab-btn'+(t==='esp'?' active':'');
-  const hint = t==='com'
-    ? 'Eteridecon / Eterium (+0~+9) &nbsp;·&nbsp; Bradium de Éter / Carnium de Étel (+10~+19)'
-    : 'Enriquecido (+0~+9) &nbsp;·&nbsp; Perfeito (+10~+14 ou +15~+19)';
-  document.getElementById('r-hint').innerHTML = hint;
-  buildRefineTable();
-}
-
-function setRefineEvent(e) {
-  RS.event = e;
-  document.getElementById('r-tab-nev').className = 'tab-btn'+(!e?' active':'');
-  document.getElementById('r-tab-ev').className  = 'tab-btn'+(e?' active':'');
-  buildRefineTable();
-}
-
-function buildRefineTable() {
-  const ei = RS.event ? 1 : 0;
-  const data = RS.tab === 'com' ? REFINE_COM : REFINE_ESP;
-  const penLo = RS.tab === 'com' ? 'Perde 3 refinos' : 'Perde 1 refino';
-  const tb = document.getElementById('refine-body');
-  tb.innerHTML = '';
-  for (let r = 1; r <= 20; r++) {
-    const arr = data[r];
-    const pct = arr[ei];
-    const isHL = r === S.refine;
-    const pen = r >= 10 ? 'Perde item' : (pct === 100 ? '—' : penLo);
-    const penColor = pen === 'Perde item' ? '#ef6a6a' : pen === '—' ? '#4e3f66' : '#d99a3a';
-    const tr = document.createElement('tr');
-    if (isHL) tr.className = 'hl';
-    tr.innerHTML = `<td>+${r}</td><td>${pct}%</td><td>${pct}%</td><td style="color:${penColor}">${pen}</td>`;
-    tb.appendChild(tr);
-  }
-}
-
-setRefineTab('com');
-setRefineEvent(false);
-
-// ══════════════════════════════════════════════════════════
-// SIMULADOR DE REFINO (item gradeado)
-// ══════════════════════════════════════════════════════════
-const SIM = { equip:'weapon', start:0, target:11, event:false,
-              lowCat:'com', hiCat:'com', useBSB:true, bsbFrom:7, bsbTo:13,
-              obtain:'craft', bsbPer:1 };
-const simPriceCache = {};
-
-// receita de cada minério especial (taxa NPC + minério-base + pó de éter)
-const SIM_ORE = {
-  weapon: {
-    low:   { com:{name:'Eteridecon',                base:'Oridecon',          npc:10000, po:1},
-             esp:{name:'Eteridecon Enriquecido',    base:'Oridecon Enriq.',   npc:20000, po:2} },
-    hiCom: {name:'Bradium de Éter',                 base:'Bradium',           npc:30000, po:3},
-    hi10:  {name:'Eteridecon Perfeito',             base:'Oridecon Perfeito', npc:50000, po:3},
-    hi15:  {name:'Bradium de Éter Perfeito',        base:'Bradium Perfeito',  npc:50000, po:3}
-  },
-  armor: {
-    low:   { com:{name:'Eterium',                   base:'Elunium',           npc:10000, po:1},
-             esp:{name:'Eterium Enriquecido',       base:'Elunium Enriq.',    npc:20000, po:2} },
-    hiCom: {name:'Carnium de Étel',                 base:'Carnium',           npc:50000, po:3},
-    hi10:  {name:'Eterium Perfeito',                base:'Elunium Perfeito',  npc:50000, po:3},
-    hi15:  {name:'Carnium Perfeito de Étel',        base:'Carnium Perfeito',  npc:50000, po:3}
-  }
-};
-
-function oreAt(r) {
-  const E = SIM_ORE[SIM.equip];
-  if (r <= 9) return SIM.lowCat === 'com' ? E.low.com : E.low.esp;
-  if (SIM.hiCat === 'com') return E.hiCom;      // Bradium/Carnium comum +10~+19
-  return r <= 14 ? E.hi10 : E.hi15;             // Perfeito +10~+14 / +15~+19
-}
-function catAt(r) { return r <= 9 ? SIM.lowCat : SIM.hiCat; }
-function succAt(r, ei) {
-  const t = catAt(r) === 'com' ? REFINE_COM : REFINE_ESP;
-  return (t[r] !== undefined ? t[r][ei] : 100) / 100;   // r=0 e faixa segura = 100%
-}
-function bsbActive(r) { return SIM.useBSB && r >= SIM.bsbFrom && r <= SIM.bsbTo; }
-
-function slug(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').toLowerCase(); }
-function pval(id){ const el=document.getElementById(id); if(!el) return 0;
-  const raw=el.value.replace(/\./g,'').replace(/\D/g,''); return raw===''?0:parseInt(raw,10); }
-function cacheSimPrice(name,el){ simPriceCache[name]=el.value; }
-
-// resolve A·x = b por eliminação de Gauss (n pequeno)
-function linSolve(A, b){
-  const n=b.length, M=A.map((row,i)=>row.slice().concat(b[i]));
-  for(let c=0;c<n;c++){
-    let piv=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[piv][c])) piv=r;
-    if(Math.abs(M[piv][c])<1e-12) continue;
-    [M[c],M[piv]]=[M[piv],M[c]];
-    const d=M[c][c]; for(let j=c;j<=n;j++) M[c][j]/=d;
-    for(let r=0;r<n;r++) if(r!==c){ const f=M[r][c]; if(f) for(let j=c;j<=n;j++) M[r][j]-=f*M[c][j]; }
-  }
-  return M.map(row=>row[n]);
-}
-
-// cadeia de Markov: estados = níveis 0..T-1 (transitórios), T = sucesso, item quebrado = falha absorvente
-function simSolve(){
-  const T=SIM.target, ei=SIM.event?1:0, n=T;
-  const A=Array.from({length:n},()=>new Array(n).fill(0));
-  const bsuc=new Array(n).fill(0);
-  let dead=false;
-  for(let r=0;r<T;r++){
-    const p=succAt(r,ei);
-    if(r+1===T) bsuc[r]+=p; else A[r][r+1]+=p;   // sucesso → sobe 1
-    const q=1-p;
-    if(q>1e-12){
-      let dest;
-      if(bsbActive(r)) dest=r;                    // BSB: segura o nível
-      else if(r<=9){ dest=Math.max(0, r-(SIM.lowCat==='com'?3:1)); } // cai N níveis
-      else { dest=-1; dead=true; }                // +10 sem BSB → item quebra
-      if(dest>=0) A[r][dest]+=q;
-    }
-  }
-  // prob. de sucesso: (I−A)Q = bsuc
-  const IA=Array.from({length:n},(_,i)=>A[i].map((v,j)=>(i===j?1:0)-v));
-  const Q=linSolve(IA,bsuc);
-  // visitas esperadas por nível: (I−Aᵀ)V = e_start
-  const IAt=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>(i===j?1:0)-A[j][i]));
-  const e=new Array(n).fill(0); e[Math.min(SIM.start,n-1)]=1;
-  const V=linSolve(IAt,e);
-  return { V, success:Q[Math.min(SIM.start,n-1)], dead };
-}
-
-// ── lista de preços dinâmica (um campo por minério da jornada) ──
-function simOres(){
-  const seen={}, list=[];
-  for(let r=0;r<SIM.target;r++){ const o=oreAt(r); if(!seen[o.name]){ seen[o.name]=1; list.push(o); } }
-  return list;
-}
-function buildSimPrices(){
-  // guarda valores atuais antes de recriar
-  document.querySelectorAll('#sim-ore-list input').forEach(el=>{ if(el.dataset.name) simPriceCache[el.dataset.name]=el.value; });
-  const craft = SIM.obtain==='craft';
-  const html = simOres().map(o=>{
-    const label = craft
-      ? `${o.base} <span style="color:var(--muted);font-size:.82em">→ ${o.name}</span>`
-      : o.name;
-    const val = simPriceCache[o.name] ? ` value="${simPriceCache[o.name]}"` : '';
-    return `<div class="ipc"><span class="ipc-name">${label}</span>`
-      + `<div class="ipc-input"><input type="text" id="sim-ore-${slug(o.name)}" data-name="${o.name}"${val}`
-      + ` oninput="formatPrice(this);cacheSimPrice(this.dataset.name,this);simCalc()" placeholder="0" autocomplete="off">`
-      + `<span class="price-unit">z</span></div></div>`;
-  }).join('');
-  document.getElementById('sim-ore-list').innerHTML = html;
-  document.getElementById('sim-po-row').style.display = craft ? 'flex' : 'none';
-  document.getElementById('sim-price-hint').textContent = craft
-    ? 'Preço do minério-base + Pó de Éter (a taxa de NPC já está inclusa no cálculo).'
-    : 'Preço do minério já pronto para refinar.';
-}
-
-function clampSim(id,min,max,def){
-  const el=document.getElementById(id); let v=parseInt(el.value);
-  if(isNaN(v)) return def;
-  if(v>max){ v=max; el.value=max; }
-  if(v<min){ v=min; el.value=min; }
-  return v;
-}
-function readSim(){
-  SIM.equip  = document.getElementById('sim-equip').value;
-  SIM.lowCat = document.getElementById('sim-lowcat').value;
-  SIM.hiCat  = document.getElementById('sim-hicat').value;
-  SIM.start  = clampSim('sim-start',0,19,0);
-  SIM.target = clampSim('sim-target',1,20,11);
-  if(SIM.target<=SIM.start){ SIM.target=SIM.start+1; document.getElementById('sim-target').value=SIM.target; }
-  SIM.bsbFrom= clampSim('sim-bsb-from',7,13,7);
-  SIM.bsbTo  = clampSim('sim-bsb-to',7,13,13);
-  if(SIM.bsbTo<SIM.bsbFrom){ SIM.bsbTo=SIM.bsbFrom; document.getElementById('sim-bsb-to').value=SIM.bsbTo; }
-  SIM.bsbPer = clampSim('sim-bsbper',1,999,1);
-}
-function onSimConfig(){ readSim(); buildSimPrices(); simCalc(); }
-
-function setSimEvent(e){
-  SIM.event=e;
-  document.getElementById('sim-ev-no').className ='tbtn'+(!e?' act-gold':'');
-  document.getElementById('sim-ev-yes').className='tbtn'+( e?' act-gold':'');
-  simCalc();
-}
-function setSimBSB(b){
-  SIM.useBSB=b;
-  document.getElementById('sim-bsb-no').className ='tbtn'+(!b?' act-red':'');
-  document.getElementById('sim-bsb-yes').className='tbtn'+( b?' act-green':'');
-  document.getElementById('sim-bsb-range').style.display    = b?'grid':'none';
-  document.getElementById('sim-bsb-price-row').style.display= b?'flex':'none';
-  simCalc();
-}
-function setSimObtain(o){
-  SIM.obtain=o;
-  document.getElementById('sim-obt-craft').className='tbtn'+(o==='craft'?' act-gold':'');
-  document.getElementById('sim-obt-buy').className  ='tbtn'+(o==='buy'  ?' act-gold':'');
-  buildSimPrices(); simCalc();
-}
-
-function simCalc(){
-  const res=simSolve(), V=res.V;
-  const poPrice=pval('sim-po'), bsbPrice=pval('sim-bsbprice'), craft=SIM.obtain==='craft';
-
-  const oreCount={}; let attempts=0, poTotal=0, bsbCount=0, oreCost=0;
-  for(let r=0;r<SIM.target;r++){
-    const v=V[r]; if(!(v>1e-9)) continue;
-    const o=oreAt(r);
-    attempts+=v;
-    oreCount[o.name]=(oreCount[o.name]||0)+v;
-    poTotal+=v*o.po;
-    if(bsbActive(r)) bsbCount+=v*SIM.bsbPer;
-    const price=pval('sim-ore-'+slug(o.name));
-    oreCost += v*(craft ? (o.npc + price + o.po*poPrice) : price);
-  }
-  const bsbCost=bsbCount*bsbPrice;
-  const total=oreCost+bsbCost;
-  const hasPrices = total>0;
-  const success=res.success, dead=res.dead;
-  const factor = (dead && success>1e-9) ? 1/success : 1;  // p/ garantir 1 item no alvo
-
-  // ── painel de resultado (col 3) ──
-  const pct=Math.round(success*100);
-  const rc = success>=0.999?'rg-good':success>=0.6?'rg-mid':'rg-bad';
-  const oreRows=Object.keys(oreCount).map(nm=>
-    `<div class="mat-row"><span>${nm}</span><span class="mat-qty">× ${Math.ceil(oreCount[nm]*factor).toLocaleString('pt-BR')}</span></div>`).join('');
-
-  document.getElementById('sim-results').innerHTML=`
-    <div class="res-top">
-      <div class="chance-ring ${rc}">
-        <div class="ring-pct">${dead?pct+'%':'100%'}</div>
-        <div class="ring-lbl">${dead?'chega ao alvo':'garantido'}</div>
-      </div>
-      <div class="kv-list">
-        <div class="kv"><span class="kv-k">Jornada</span><span class="kv-v">+${SIM.start} → +${SIM.target}</span></div>
-        <div class="kv"><span class="kv-k">Tentativas esperadas</span><span class="kv-v v-gold">~${(attempts*factor).toFixed(1)}</span></div>
-        <div class="kv"><span class="kv-k">Minérios (total)</span><span class="kv-v">~${Math.ceil(attempts*factor).toLocaleString('pt-BR')}</span></div>
-        ${SIM.useBSB?`<div class="kv"><span class="kv-k">BSB usadas</span><span class="kv-v v-green">~${Math.ceil(bsbCount*factor).toLocaleString('pt-BR')}</span></div>`:''}
-        ${craft?`<div class="kv"><span class="kv-k">Pó de Éter</span><span class="kv-v">~${Math.ceil(poTotal*factor).toLocaleString('pt-BR')}</span></div>`:''}
-        ${dead?`<div class="kv"><span class="kv-k">Itens gastos (média)</span><span class="kv-v v-red">~${factor.toFixed(2)}</span></div>`:''}
-      </div>
-    </div>
-    <hr class="div">
-    <div class="sub-lbl">Minérios por tipo${dead?' — para garantir 1 no +'+SIM.target:''}</div>
-    ${oreRows}
-    ${dead?`<div class="warn-box" style="margin-top:10px">Sem BSB acima do +9, a falha <b>destrói o item</b>. Chance de um item chegar ao +${SIM.target}: <b>${pct}%</b> — em média <b>${factor.toFixed(2)} itens</b> são consumidos. Considere usar BSB no trecho +10~+13.</div>`
-      :`<div class="exp-note" style="margin-top:8px">BSB segura o nível de +${SIM.bsbFrom} a +${SIM.bsbTo}: o item nunca cai nem quebra nesse trecho.</div>`}`;
-
-  // ── painel de custo (col 2) ──
-  const zt=n=>zf(Math.round(n));
-  document.getElementById('sim-cost').innerHTML = !hasPrices
-    ? `<div class="hint">Insira os preços acima para ver o custo estimado${dead?' (para garantir 1 item no alvo)':''}.</div>`
-    : `<div class="sub-lbl" style="margin-top:0;margin-bottom:6px">Custo esperado${dead?' — 1 item no +'+SIM.target:' — +'+SIM.start+' → +'+SIM.target}</div>
-       <div class="zeny-row"><span class="zeny-k">Minérios${craft?' (base+pó+NPC)':''}</span><span class="zeny-v">${zt(oreCost*factor)}</span></div>
-       ${SIM.useBSB&&bsbPrice>0?`<div class="zeny-row"><span class="zeny-k">BSB</span><span class="zeny-v">${zt(bsbCost*factor)}</span></div>`:''}
-       <div class="zeny-row zeny-total"><span class="zeny-k">Total esperado</span><span class="zeny-v v-gold">${zt(total*factor)}</span></div>`;
-}
-
-function simInit(){
-  readSim();
-  setSimEvent(false); setSimBSB(true); setSimObtain('craft');
-  buildSimPrices(); simCalc();
-}
-simInit();
-</script>
+<script src="app.js"></script>
 </body>
 </html>

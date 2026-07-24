@@ -1,10 +1,17 @@
 # Calculadora de Grau — Ragnarök Online
 
-Calculadora completa para o **Sistema de Grau** e **Refinamento** de Ragnarök Online (LATAM), em um único arquivo HTML — sem dependências, sem instalação, sem servidor.
+Calculadora completa para o **Sistema de Grau** e **Refinamento** de Ragnarök Online (bRO) — sem dependências, sem instalação, sem servidor.
+
+**Estrutura do projeto:**
+- `index.html` — estrutura da página
+- `styles.css` — visual/tema
+- `app.js` — dados, cálculos e interações (tours, passos progressivos, boas-vindas)
 
 ## Como usar
 
-Basta acessar https://fwksyt.github.io/calculadora_grau/  em qualquer navegador moderno. Tudo roda localmente no seu navegador.
+**Online:** acesse `https://SEU-USUARIO.github.io/grau-calculator/` (troque `SEU-USUARIO` pelo seu usuário do GitHub após publicar).
+
+**Local:** basta abrir o arquivo `index.html` em qualquer navegador moderno. Tudo roda localmente no seu navegador.
 
 ## Funcionalidades
 
@@ -12,7 +19,7 @@ Basta acessar https://fwksyt.github.io/calculadora_grau/  em qualquer navegador 
 
 Calcula a chance de sucesso e o custo de subir o grau de um equipamento (Sem Grau → D → C → B → A):
 
-- **Grau atual e alvo** — cada transição usa seu próprio material (Aquamarina, Topázio, Ametista ou Âmbar de Éter) e taxa de NPC.
+- **Grau atual e alvo livres** — calcule uma etapa única ou a jornada completa (ex.: Sem Grau → Grau A). Cada transição usa seu próprio material (Aquamarina, Topázio, Ametista ou Âmbar de Éter) e taxa de NPC; na jornada com várias etapas o resultado mostra a chance de cada uma, a chance de chegar ao alvo sem falhar e os totais esperados de tentativas, materiais e zeny. No processo Normal, o cálculo considera que uma falha destrói o item e obriga a refazer as etapas anteriores.
 - **Nível de refino** — a chance base depende do refino do item (mínimo +9 a +11, conforme a transição).
 - **Evento de Grau** — alterna entre as chances normais e as chances aumentadas de evento.
 - **Processo Normal vs. Seguro** — no normal a falha **destrói o item** (1× materiais); no seguro o item é preservado, mas gasta 5× (ou 10×) mais materiais e taxa.
@@ -42,11 +49,18 @@ Todos os campos de preço são **opcionais**: sem eles a calculadora mostra apen
 
 ## Fontes dos dados
 
-- Chances e mecânicas: [LATAMWiki — Grau](https://LATAMwiki.org/wiki/Grau) e [LATAMWiki — Refinamento](https://LATAMwiki.org/wiki/Refinamento)
+- Chances e mecânicas: [bROWiki — Grau](https://browiki.org/wiki/Grau) e [bROWiki — Refinamento](https://browiki.org/wiki/Refinamento)
 - Ícones e banco de itens: [Divine Pride](https://www.divine-pride.net/)
 
-> **Nota:** as chances e taxas podem mudar com atualizações do servidor. Confira sempre a LATAMWiki em caso de dúvida.
+> **Nota:** as chances e taxas podem mudar com atualizações do servidor. Confira sempre a bROWiki em caso de dúvida.
 
 ## Tecnologias
 
-HTML, CSS e JavaScript puros em um único arquivo — nenhuma biblioteca externa (apenas a fonte Inter via Google Fonts e ícones do Divine Pride, carregados online; a calculadora funciona mesmo sem internet, só sem ícones).
+HTML, CSS e JavaScript puros — nenhuma biblioteca ou framework (apenas a fonte Inter via Google Fonts e ícones do Divine Pride, carregados online; a calculadora funciona mesmo sem internet, só sem ícones).
+
+## Recursos de usabilidade
+
+- **Boas-vindas na primeira visita** com atalho para o tour guiado.
+- **Tours "Ver na prática"** (menu lateral ou botão **?** flutuante): a calculadora se preenche sozinha, passo a passo, explicando cada campo.
+- **Passos progressivos** (1 Configuração → 2 Preços → 3 Resultado): as etapas seguintes se revelam conforme você usa — apenas na primeira visita; depois tudo fica aberto.
+- **Meus Links** na sidebar: espaço para seus links e referências (edite o `index.html`, grupo `my-links`).
